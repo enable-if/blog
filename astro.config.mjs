@@ -56,7 +56,8 @@ export default defineConfig({
 			},
 		}),
 		expressiveCode({
-			themes: [expressiveCodeConfig.theme, expressiveCodeConfig.theme],
+			// Register both light and dark themes so runtime can switch using data-theme attr
+			themes: [expressiveCodeConfig.lightTheme, expressiveCodeConfig.darkTheme],
 			plugins: [
 				pluginCollapsibleSections(),
 				pluginLineNumbers(),
