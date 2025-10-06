@@ -19,8 +19,9 @@ export function pluginLanguageBadge() {
         font-size: 0.75rem;
         font-weight: bold;
         text-transform: uppercase;
-        color: oklch(0.75 0.1 var(--hue));
-        background: oklch(0.33 0.035 var(--hue));
+        /* Use site-wide theme variables so badge adapts to light/dark */
+        color: var(--btn-content);
+        background: var(--btn-regular-bg);
         border-radius: 0.5rem;
         pointer-events: none;
         transition: opacity 0.3s;

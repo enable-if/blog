@@ -72,26 +72,42 @@
 
   .copy-btn {
     all: initial;
-    @apply btn-regular-dark opacity-0 shadow-lg shadow-black/50 absolute active:scale-90 h-8 w-8 top-3 right-3 text-sm rounded-lg transition-all ease-in-out z-20 cursor-pointer;
+    /* Use theme-aware neutral button variables instead of fixed dark scheme */
+    @apply opacity-0 shadow-lg shadow-black/50 absolute active:scale-90 h-8 w-8 top-3 right-3 text-sm rounded-lg transition-all ease-in-out z-20 cursor-pointer;
+    @apply bg-[var(--btn-regular-bg)] hover:bg-[var(--btn-regular-bg-hover)] active:bg-[var(--btn-regular-bg-active)] text-[var(--btn-content)];
+    /* Material-like subtle elevation */
+    box-shadow: 0 1px 2px rgba(0 0 0 / 0.18), 0 1px 3px rgba(0 0 0 / 0.12);
   }
   .frame:hover .copy-btn {
     opacity: 1;
+    box-shadow: 0 2px 6px rgba(0 0 0 / 0.2), 0 2px 4px rgba(0 0 0 / 0.12);
+  }
+  .copy-btn:active {
+    box-shadow: 0 1px 2px rgba(0 0 0 / 0.2), 0 1px 2px rgba(0 0 0 / 0.1);
   }
 
   .copy-btn-icon {
-    @apply absolute top-1/2 left-1/2 transition -translate-x-1/2 -translate-y-1/2 w-4 h-4 fill-white pointer-events-none;
+    /* Let icons use currentColor from the button */
+    @apply absolute top-1/2 left-1/2 transition -translate-x-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none;
+    fill: currentColor;
   }
   .copy-btn .copy-icon {
-    @apply opacity-100 fill-white dark:fill-white/75;
+    @apply opacity-100;
   }
   .copy-btn.success .copy-icon {
-    @apply opacity-0 fill-[var(--deep-text)];
+    @apply opacity-0;
   }
   .copy-btn .success-icon {
-    @apply opacity-0 fill-white;
+    @apply opacity-0;
   }
   .copy-btn.success .success-icon {
     @apply opacity-100;
+  }
+
+  /* Success state: use primary color and white icon for clear feedback */
+  .copy-btn.success {
+    background: var(--primary);
+    color: white;
   }
 
   .expressive-code {
