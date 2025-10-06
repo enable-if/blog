@@ -1,4 +1,3 @@
-import { toRoutingStrategy } from "node_modules/astro/dist/i18n/utils";
 import type {
 	ExpressiveCodeConfig,
 	LicenseConfig,
