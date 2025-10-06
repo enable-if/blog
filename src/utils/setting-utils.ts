@@ -20,11 +20,10 @@ export function getHue(): number {
 
 export function setHue(hue: number): void {
 	localStorage.setItem("hue", String(hue));
-	const r = document.querySelector(":root") as HTMLElement;
-	if (!r) {
-		return;
+	const r = document.documentElement as HTMLElement;
+	if (r) {
+		r.style.setProperty("--hue", String(hue));
 	}
-	r.style.setProperty("--hue", String(hue));
 }
 
 export function applyThemeToDocument(theme: LIGHT_DARK_MODE): void {

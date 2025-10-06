@@ -1,22 +1,100 @@
 <script lang="ts">
+// 性能说明：
+// 以前通过 `$:` 响应式在每次滑动时调用 setHue，会同步写入 localStorage 且导致整页基于 --hue 的样式重算，
+// 在高频 on:input 事件下造成卡顿。现在改为：
+// - on:input 仅通过 requestAnimationFrame 预览 CSS 变量 --hue（不落盘）；
+// - on:change（松手）时再调用 setHue 持久化到 localStorage。
+// 这样能显著降低主线程负担并保持流畅拖动体验。
 import I18nKey from "@i18n/i18nKey";
 import { i18n } from "@i18n/translation";
 import Icon from "@iconify/svelte";
 import { getDefaultHue, getHue, setHue } from "@utils/setting-utils";
 
+let panelEl: HTMLDivElement;
+
 let hue = getHue();
 const defaultHue = getDefaultHue();
 
 function resetHue() {
+	// Reset to default and persist immediately with a smooth transition
 	hue = getDefaultHue();
+	setHue(hue);
+	const root = document.documentElement;
+	root.classList.add("hue-transition");
+	window.setTimeout(() => root.classList.remove("hue-transition"), 300);
 }
 
-$: if (hue || hue === 0) {
-	setHue(hue);
+// rAF-throttled preview updater (no localStorage writes during drag)
+let raf = 0 as number | 0;
+let pendingHue = hue;
+function previewHue(next: number) {
+	pendingHue = next;
+	if (raf) return;
+	raf = requestAnimationFrame(() => {
+		// Only preview within the panel to avoid full-page reflow while dragging
+		if (panelEl) {
+			const h = String(pendingHue);
+			panelEl.style.setProperty("--hue", h);
+			// Also override commonly used derived vars for immediate visible feedback
+			const isDark = document.documentElement.classList.contains("dark");
+			panelEl.style.setProperty(
+				"--primary",
+				isDark ? `oklch(0.75 0.14 ${h})` : `oklch(0.70 0.14 ${h})`,
+			);
+			panelEl.style.setProperty(
+				"--btn-content",
+				isDark ? `oklch(0.75 0.1 ${h})` : `oklch(0.55 0.12 ${h})`,
+			);
+			panelEl.style.setProperty(
+				"--btn-regular-bg",
+				isDark ? `oklch(0.33 0.035 ${h})` : `oklch(0.95 0.025 ${h})`,
+			);
+			panelEl.style.setProperty(
+				"--btn-regular-bg-hover",
+				isDark ? `oklch(0.38 0.04 ${h})` : `oklch(0.9 0.05 ${h})`,
+			);
+			panelEl.style.setProperty(
+				"--btn-regular-bg-active",
+				isDark ? `oklch(0.43 0.045 ${h})` : `oklch(0.85 0.08 ${h})`,
+			);
+			// Float panel bg varies with hue only in dark mode; override anyway for consistency
+			panelEl.style.setProperty(
+				"--float-panel-bg",
+				isDark ? `oklch(0.19 0.015 ${h})` : "white",
+			);
+		}
+		raf = 0;
+	});
+}
+
+function onSliderInput(e: Event) {
+	const v = Number((e.currentTarget as HTMLInputElement).value);
+	// hue is already bound, but read explicitly to be robust across Svelte versions
+	previewHue(v);
+}
+
+function onSliderChange(e: Event) {
+	const v = Number((e.currentTarget as HTMLInputElement).value);
+	// Persist selection once user finishes interaction
+	setHue(v);
+	// Remove local override so panel inherits the new global hue
+	if (panelEl) {
+		panelEl.style.removeProperty("--hue");
+		panelEl.style.removeProperty("--primary");
+		panelEl.style.removeProperty("--btn-content");
+		panelEl.style.removeProperty("--btn-regular-bg");
+		panelEl.style.removeProperty("--btn-regular-bg-hover");
+		panelEl.style.removeProperty("--btn-regular-bg-active");
+		panelEl.style.removeProperty("--float-panel-bg");
+	}
+	// Add a short-lived global color transition for smoother apply
+	const root = document.documentElement;
+	root.classList.add("hue-transition");
+	window.setTimeout(() => root.classList.remove("hue-transition"), 300);
 }
 </script>
 
-<div id="display-setting" class="float-panel float-panel-closed absolute transition-all w-80 right-4 px-4 py-4">
+<div id="display-setting" bind:this={panelEl} class="float-panel float-panel-closed absolute transition-all w-80 right-4 px-4 py-4">
     <div class="flex flex-row gap-2 mb-3 items-center justify-between">
         <div class="flex gap-2 font-bold text-lg text-neutral-900 dark:text-neutral-100 transition relative ml-3
             before:w-1 before:h-4 before:rounded-md before:bg-[var(--primary)]
@@ -37,14 +115,18 @@ $: if (hue || hue === 0) {
             </div>
         </div>
     </div>
-    <div class="w-full h-6 px-1 bg-[oklch(0.80_0.10_0)] dark:bg-[oklch(0.70_0.10_0)] rounded select-none">
-        <input aria-label={i18n(I18nKey.themeColor)} type="range" min="0" max="360" bind:value={hue}
-               class="slider" id="colorSlider" step="5" style="width: 100%">
-    </div>
+  <div class="w-full h-6 px-1 bg-[oklch(0.80_0.10_0)] dark:bg-[oklch(0.70_0.10_0)] rounded select-none">
+    <input aria-label={i18n(I18nKey.themeColor)} type="range" min="0" max="360" bind:value={hue}
+         class="slider" id="colorSlider" step="5" style="width: 100%"
+         on:input={onSliderInput} on:change={onSliderChange}>
+  </div>
 </div>
 
 
 <style lang="stylus">
+    :global(html.hue-transition), :global(html.hue-transition) *
+      transition background-color .25s ease, color .25s ease, border-color .25s ease, fill .25s ease, stroke .25s ease
+
     #display-setting
       input[type="range"]
         -webkit-appearance none
