@@ -1,3 +1,4 @@
+import { toRoutingStrategy } from "node_modules/astro/dist/i18n/utils";
 import type {
 	ExpressiveCodeConfig,
 	LicenseConfig,
@@ -17,8 +18,9 @@ export const siteConfig: SiteConfig = {
 	},
 	banner: {
 		enable: true,
-		src: "assets/images/demo-banner.png", // Relative to the /src directory. Relative to the /public directory if it starts with '/'
-		position: "center", // Equivalent to object-position, only supports 'top', 'center', 'bottom'. 'center' by default
+		src: "assets/images/banner.png", // Relative to the /src directory. Relative to the /public directory if it starts with '/'
+		usePostCover: true,
+		position: "bottom", // Equivalent to object-position, only supports 'top', 'center', 'bottom'. 'center' by default
 		credit: {
 			enable: false, // Display the credit text of the banner image
 			text: "", // Credit text to be displayed
@@ -39,6 +41,11 @@ export const siteConfig: SiteConfig = {
 		// 	theme: "dark",
 		// },
 	],
+	icp: {
+		enable: false,
+		text: "",
+		url: "https://beian.miit.gov.cn/",
+	},
 };
 
 export const navBarConfig: NavBarConfig = {

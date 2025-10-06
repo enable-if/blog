@@ -2,7 +2,7 @@
 import I18nKey from "@i18n/i18nKey";
 import { i18n } from "@i18n/translation";
 import Icon from "@iconify/svelte";
-import { url } from "@utils/url-utils.ts";
+import { url } from "@utils/url-utils";
 import { onMount } from "svelte";
 import type { SearchResult } from "@/global";
 
@@ -27,7 +27,7 @@ const fakeResult: SearchResult[] = [
 		meta: {
 			title: "If You Want to Test the Search",
 		},
-		excerpt: "Try running <mark>npm build && npm preview</mark> instead.",
+		excerpt: "Try running <mark>pnpm build && pnpm preview</mark> instead.",
 	},
 ];
 
