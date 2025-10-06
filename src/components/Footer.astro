@@ -1,6 +1,6 @@
 ---
 
-import { profileConfig } from "../config";
+import { profileConfig, siteConfig } from "../config";
 import { url } from "../utils/url-utils";
 
 const currentYear = new Date().getFullYear();
@@ -30,8 +30,14 @@ const currentYear = new Date().getFullYear();
             } setInterval(runtime, 1e3)
         </script>
 
-        <!-- TODO: 备案 -->
-        <!-- <a class="transition link text-[var(--primary)] font-medium" target="_blank" href="https://beian.miit.gov.cn/"></a> -->
+        {siteConfig.icp && siteConfig.icp.enable && (
+            <>
+                {" / "}
+                <a class="transition link text-[var(--primary)] font-medium" target="_blank" href={siteConfig.icp.url || "https://beian.miit.gov.cn/"}>
+                    {siteConfig.icp.text}
+                </a>
+            </>
+        )}
         
         <div class="transition text-50 text-sm text-center hidden md:block"><p id="runningtime"> </p></div>
         Powered by

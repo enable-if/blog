@@ -23,6 +23,8 @@ export type SiteConfig = {
 	banner: {
 		enable: boolean;
 		src: string;
+		/** If true, use post cover (page banner prop) when provided. */
+		usePostCover?: boolean;
 		position?: "top" | "center" | "bottom";
 		credit: {
 			enable: boolean;
@@ -36,6 +38,11 @@ export type SiteConfig = {
 	};
 
 	favicon: Favicon[];
+	icp?: {
+		enable: boolean;
+		text: string;
+		url?: string;
+	};
 };
 
 export type Favicon = {

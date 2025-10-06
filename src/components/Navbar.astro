@@ -109,7 +109,8 @@ async function loadPagefind() {
     try {
         const response = await fetch(scriptUrl, { method: 'HEAD' });
         if (!response.ok) {
-            throw new Error(`Pagefind script not found: ${response.status}`);
+            console.warn(`Pagefind script not available: ${response.status}`);
+            throw new Error('skip-import');
         }
 
         const pagefind = await import(scriptUrl);

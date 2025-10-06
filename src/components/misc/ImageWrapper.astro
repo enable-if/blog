@@ -24,24 +24,51 @@ const isLocal = !(
 );
 const isPublic = src.startsWith("/");
 
-// TODO temporary workaround for images dynamic import
+// Workaround for images dynamic import (Astro limitation)
 // https://github.com/withastro/astro/issues/3373
-// biome-ignore lint/suspicious/noImplicitAnyLet: <check later>
-let img;
+let img: ImageMetadata | undefined;
 if (isLocal) {
 	const files = import.meta.glob<ImageMetadata>("../../**", {
 		import: "default",
 	});
-	let normalizedPath = path
-		.normalize(path.join("../../", basePath, src))
+
+	// Build a normalized path like: ../../content/posts/<slugdir>/<file>
+	const normalizedBase = path
+		.normalize(path.join("../../", basePath))
+		.replace(/\\/g, "/")
+		// ensure trailing slash for robust join
+		.replace(/(?<!\/)$/, "/");
+	const normalizedPath = path
+		.normalize(path.join(normalizedBase, src))
 		.replace(/\\/g, "/");
-	const file = files[normalizedPath];
-	if (!file) {
+
+	// If basePath points under content/posts, block path traversal outside it
+	const postsRoot = "../../content/posts/";
+	const enforcePostsRoot =
+		normalizedBase.includes("/content/posts/") ||
+		normalizedBase.endsWith("content/posts/");
+	const withinPostsRoot = normalizedPath.startsWith(postsRoot);
+
+	if (enforcePostsRoot && !withinPostsRoot) {
 		console.error(
-			`\n[ERROR] Image file not found: ${normalizedPath.replace("../../", "src/")}`,
+			`\n[ERROR] Refused to load image outside posts root.\n  basePath: ${basePath}\n  src: ${src}\n  resolved: ${normalizedPath.replace("../../", "src/")}`,
 		);
+	} else {
+		const file = files[normalizedPath];
+		if (!file) {
+			console.error(
+				`\n[ERROR] Image file not found: ${normalizedPath.replace("../../", "src/")}.\n  Hint: keep covers with the post folder and pass basePath like "content/posts/<post-dir>/".`,
+			);
+		} else {
+			try {
+				img = await file();
+			} catch (e) {
+				console.error(
+					`\n[ERROR] Failed to import image: ${normalizedPath.replace("../../", "src/")}.\n  ${(e as Error).message}`,
+				);
+			}
+		}
 	}
-	img = await file();
 }
 
 const imageClass = "w-full h-full object-cover";
@@ -49,6 +76,11 @@ const imageStyle = `object-position: ${position}`;
 ---
 <div id={id} class:list={[className, 'overflow-hidden relative']}>
     <div class="transition absolute inset-0 dark:bg-black/10 bg-opacity-50 pointer-events-none"></div>
-    {isLocal && img && <Image src={img} alt={alt || ""} class={imageClass} style={imageStyle}/>}
-    {!isLocal && <img src={isPublic ? url(src) : src} alt={alt || ""} class={imageClass} style={imageStyle}/>}
+	{isLocal && img && <Image src={img} alt={alt || ""} class={imageClass} style={imageStyle}/>}
+	{isLocal && !img && (
+		<div class="flex items-center justify-center w-full h-full text-sm text-50 bg-black/5 dark:bg-white/10">
+			<!-- silently fail in production; show minimal placeholder -->
+		</div>
+	)}
+	{!isLocal && <img src={isPublic ? url(src) : src} alt={alt || ""} class={imageClass} style={imageStyle}/>} 
 </div>
