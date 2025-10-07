@@ -121,3 +121,22 @@ export type ExpressiveCodeConfig = {
 	 */
 	lightTheme: string;
 };
+
+export type GiscusConfig = {
+	/** Enable/disable comments globally */
+	enable: boolean;
+	repo: string;
+	repoId: string;
+	category: string;
+	categoryId: string;
+	mapping?: "pathname" | "url" | "title" | "og:title" | "specific";
+	term?: string; // when mapping = specific
+	strict?: "0" | "1";
+	reactionsEnabled?: "0" | "1";
+	emitMetadata?: "0" | "1";
+	inputPosition?: "top" | "bottom";
+	themeLight?: string; // giscus theme name or CSS URL
+	themeDark?: string; // giscus theme name or CSS URL
+	lang?: string;
+	loading?: "lazy" | "eager";
+};

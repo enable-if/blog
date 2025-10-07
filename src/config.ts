@@ -1,5 +1,6 @@
 import type {
 	ExpressiveCodeConfig,
+	GiscusConfig,
 	LicenseConfig,
 	NavBarConfig,
 	ProfileConfig,
@@ -44,7 +45,7 @@ export const siteConfig: SiteConfig = {
 	],
 	cdn: {
 		/**
-		 * CDN usage guide (no environment variables required):
+		 * CDN usage guide:
 		 *
 		 * You can configure two independent CDN prefixes:
 		 * 1) assetsPrefix (build-time prefix)
@@ -118,4 +119,22 @@ export const expressiveCodeConfig: ExpressiveCodeConfig = {
 	// Provide both dark & light themes. These names are Shiki theme IDs supported by Expressive Code.
 	darkTheme: "github-dark",
 	lightTheme: "github-light",
+};
+
+export const giscusConfig: GiscusConfig = {
+	enable: true,
+	repo: "enable-if/blog",
+	repoId: "R_kgDOP8IbFQ",
+	category: "Announcements",
+	categoryId: "DIC_kwDOP8IbFc4CwPd4",
+	mapping: "pathname",
+	strict: "0",
+	reactionsEnabled: "1",
+	emitMetadata: "0",
+	inputPosition: "bottom",
+	// Use custom CSS themes hosted under /public/giscus
+	themeLight: "/giscus/theme-light.css",
+	themeDark: "/giscus/theme-dark.css",
+	lang: "zh-CN",
+	loading: "lazy",
 };

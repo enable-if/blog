@@ -1,0 +1,285 @@
+---
+interface Props {
+  repo: string;
+  repoId: string;
+  category: string;
+  categoryId: string;
+  mapping?: "pathname" | "url" | "title" | "og:title" | "specific";
+  term?: string; // when mapping = specific
+  strict?: "0" | "1";
+  reactionsEnabled?: "0" | "1";
+  emitMetadata?: "0" | "1";
+  inputPosition?: "top" | "bottom";
+  // Theme options: giscus built-in theme names or a custom CSS URL
+  themeLight?: string; // default: 'light'
+  themeDark?: string; // default: 'dark'
+  lang?: string; // default: 'zh-CN'
+  loading?: "lazy" | "eager"; // default: 'lazy'
+}
+
+const {
+  repo,
+  repoId,
+  category,
+  categoryId,
+  mapping = "pathname",
+  term,
+  strict = "0",
+  reactionsEnabled = "1",
+  emitMetadata = "0",
+  inputPosition = "bottom",
+  themeLight = "light",
+  themeDark = "dark",
+  lang = "zh-CN",
+  loading = "lazy",
+} = Astro.props as Props;
+---
+
+<div
+  id="giscus-thread"
+  data-repo={repo}
+  data-repo-id={repoId}
+  data-category={category}
+  data-category-id={categoryId}
+  data-mapping={mapping}
+  {...term ? { "data-term": term } : {}}
+  data-strict={strict}
+  data-reactions-enabled={reactionsEnabled}
+  data-emit-metadata={emitMetadata}
+  data-input-position={inputPosition}
+  data-lang={lang}
+  data-loading={loading}
+>
+</div>
+
+<script is:inline define:vars={{ themeLight, themeDark }}>
+  (function () {
+    // Theme constants (built-in name or custom CSS URL)
+    const THEME_LIGHT = themeLight;
+    const THEME_DARK = themeDark;
+
+    // State and debouncing
+    let giscusReady = false; // whether giscus iframe can safely accept messages
+    let lastSentTheme = null; // last sent theme (dedupe)
+    let debounceTimer = null; // debounce timer
+    const container = /** @type {HTMLElement | null} */ (
+      document.getElementById("giscus-thread")
+    );
+
+    function normalizeTheme(theme) {
+      if (!theme) return theme;
+      if (/^https?:\/\//i.test(theme)) return theme;
+      if (theme.startsWith("/")) return window.location.origin + theme;
+      return theme;
+    }
+
+    function isDark() {
+      return document.documentElement.classList.contains("dark");
+    }
+
+    function desiredTheme() {
+      return isDark() ? THEME_DARK : THEME_LIGHT;
+    }
+
+    function getIframe() {
+      return /** @type {HTMLIFrameElement | null} */ (
+        document.querySelector("iframe.giscus-frame")
+      );
+    }
+
+    function currentGiscusOrigin() {
+      const iframe = getIframe();
+      const src = iframe?.getAttribute("src") || "";
+      if (!src) return null;
+      try {
+        return new URL(src, window.location.href).origin;
+      } catch {
+        return null;
+      }
+    }
+
+    function setGiscusTheme(theme, force) {
+      const normalized = normalizeTheme(theme);
+      if (!force && lastSentTheme === normalized) return true; // skip duplicate sends unless forced
+      const iframe = getIframe();
+      if (!iframe || !iframe.contentWindow) return false;
+      let origin = currentGiscusOrigin();
+      let targetOrigin = "*";
+      if (giscusReady && origin && origin !== window.location.origin) {
+        targetOrigin = origin;
+      }
+      const send = () => {
+        try {
+          iframe.contentWindow.postMessage(
+            { giscus: { setConfig: { theme: normalized } } },
+            targetOrigin
+          );
+          lastSentTheme = normalized;
+        } catch (_err) {
+          return false;
+        }
+      };
+      if ("requestIdleCallback" in window) {
+        /* @ts-ignore */ window.requestIdleCallback(() => send(), {
+          timeout: 200,
+        });
+      } else {
+        setTimeout(send, 0);
+      }
+      return true;
+    }
+
+    function injectGiscus(initialTheme) {
+      if (!container) return;
+      if (container.dataset.mounted === "1") return; // avoid duplicate injections
+      const s = document.createElement("script");
+      s.src = "https://giscus.app/client.js";
+      s.async = true;
+      s.crossOrigin = "anonymous";
+      const ds = container.dataset;
+      s.setAttribute("data-repo", ds.repo || "");
+      s.setAttribute("data-repo-id", ds.repoId || "");
+      s.setAttribute("data-category", ds.category || "");
+      s.setAttribute("data-category-id", ds.categoryId || "");
+      s.setAttribute("data-mapping", ds.mapping || "pathname");
+      if (ds.term) s.setAttribute("data-term", ds.term);
+      s.setAttribute("data-strict", ds.strict || "0");
+      s.setAttribute("data-reactions-enabled", ds.reactionsEnabled || "1");
+      s.setAttribute("data-emit-metadata", ds.emitMetadata || "0");
+      s.setAttribute("data-input-position", ds.inputPosition || "bottom");
+      s.setAttribute("data-theme", normalizeTheme(initialTheme));
+      s.setAttribute("data-lang", ds.lang || "zh-CN");
+      s.setAttribute("data-loading", ds.loading || "lazy");
+      container.appendChild(s);
+      container.dataset.mounted = "1";
+      lastSentTheme = normalizeTheme(initialTheme);
+    }
+
+    // Mark ready when iframe loads or a message arrives from giscus.app
+    function whenGiscusReady(onReady) {
+      const markReady = () => {
+        if (!giscusReady) {
+          giscusReady = true;
+          setTimeout(() => onReady(), 0);
+        }
+      };
+
+      const attachLoad = (iframe) => {
+        if (!iframe) return false;
+        // load event means the iframe has completed navigation to giscus.app
+        iframe.addEventListener("load", () => markReady(), { once: true });
+        return true;
+      };
+
+      const iframeNow = getIframe();
+      if (iframeNow && attachLoad(iframeNow)) return;
+
+      const mo = new MutationObserver(() => {
+        const iframe = getIframe();
+        if (iframe && attachLoad(iframe)) {
+          mo.disconnect();
+        }
+      });
+      const observeTarget = container || document.body;
+      mo.observe(observeTarget, { childList: true, subtree: true });
+
+      // Fallback: mark ready on any message from giscus.app
+      const onMessage = (e) => {
+        try {
+          const origin = new URL(e.origin).origin;
+          const iframe = getIframe();
+          if (
+            iframe &&
+            e.source === iframe.contentWindow &&
+            origin === "https://giscus.app"
+          ) {
+            window.removeEventListener("message", onMessage);
+            markReady();
+          }
+        } catch {}
+      };
+      window.addEventListener("message", onMessage);
+    }
+
+    // Apply current theme (skip until ready; callback will apply later)
+    function applyCurrentTheme() {
+      if (!giscusReady) return;
+      setGiscusTheme(desiredTheme());
+    }
+
+    function applyCurrentThemeDebounced() {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        applyCurrentTheme();
+      }, 100);
+    }
+
+    // Small reapply burst: two forced sets to cover rare races (init or CSS delay)
+    function reapplyThemeBurst() {
+      const t = desiredTheme();
+      setGiscusTheme(t, true);
+      setTimeout(() => setGiscusTheme(desiredTheme(), true), 300);
+    }
+
+    // Inject giscus with correct initial theme, then apply once ready
+    injectGiscus(desiredTheme());
+    whenGiscusReady(() => {
+      // Force reapply + small retry burst to eliminate rare races
+      reapplyThemeBurst();
+      // Normal path
+      applyCurrentTheme();
+    });
+
+    // Ensure correctness when the tab becomes visible/foreground (some browsers delay CSS in background tabs)
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") {
+        applyCurrentThemeDebounced();
+      }
+    });
+    window.addEventListener("pageshow", () => {
+      applyCurrentThemeDebounced();
+    });
+
+    // Observe <html> class changes to track light/dark toggles
+    const htmlObserver = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        if (
+          m.type === "attributes" &&
+          (m.attributeName === "class" || m.attributeName === "data-theme")
+        ) {
+          applyCurrentThemeDebounced();
+          break;
+        }
+      }
+    });
+    htmlObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class", "data-theme"],
+    });
+
+    // Cross-tab theme sync via localStorage events
+    window.addEventListener("storage", (e) => {
+      if (e.key === "theme") {
+        applyCurrentThemeDebounced();
+      }
+    });
+
+    document.addEventListener("astro:after-swap", () => {
+      giscusReady = false;
+      whenGiscusReady(() => applyCurrentTheme());
+    });
+
+    document.addEventListener("swup:contentReplaced", () => {
+      giscusReady = false;
+      whenGiscusReady(() => applyCurrentTheme());
+    });
+
+    // Respond to system theme changes when in auto mode
+    const mql = window.matchMedia("(prefers-color-scheme: dark)");
+    if (typeof mql.addEventListener === "function") {
+      mql.addEventListener("change", applyCurrentThemeDebounced);
+    } else if ("onchange" in mql) {
+      mql.onchange = applyCurrentThemeDebounced;
+    }
+  })();
+</script>

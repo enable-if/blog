@@ -161,6 +161,18 @@ export default defineConfig({
 		assetsPrefix: siteCfg.cdn?.assetsPrefix,
 	},
 	vite: {
+		server: {
+			headers: {
+				// Allow giscus iframe (https://giscus.app) to fetch custom CSS themes during dev
+				"Access-Control-Allow-Origin": "*",
+			},
+		},
+		preview: {
+			headers: {
+				// Allow cross-origin access to theme CSS in preview server as well
+				"Access-Control-Allow-Origin": "*",
+			},
+		},
 		build: {
 			rollupOptions: {
 				onwarn(warning, warn) {
