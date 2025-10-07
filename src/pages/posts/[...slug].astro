@@ -1,5 +1,6 @@
 ---
 import path from "node:path";
+import Giscus from "@components/misc/Giscus.astro";
 import ImageWrapper from "@components/misc/ImageWrapper.astro";
 import License from "@components/misc/License.astro";
 import Markdown from "@components/misc/Markdown.astro";
@@ -11,7 +12,12 @@ import { getSortedPosts } from "@utils/content-utils";
 import { formatDateToYYYYMMDD } from "@utils/date-utils";
 import { getDir, getPostUrlBySlug } from "@utils/url-utils";
 import { Icon } from "astro-icon/components";
-import { licenseConfig, profileConfig, siteConfig } from "@/config";
+import {
+  giscusConfig,
+  licenseConfig,
+  profileConfig,
+  siteConfig,
+} from "@/config";
 
 export async function getStaticPaths() {
   const blogEntries = await getSortedPosts();
@@ -184,6 +190,29 @@ if (entry.data.image) {
           />
         )
       }
+
+      {
+        giscusConfig.enable && (
+          <div class="onload-animation mb-6">
+            <Giscus
+              repo={giscusConfig.repo}
+              repoId={giscusConfig.repoId}
+              category={giscusConfig.category}
+              categoryId={giscusConfig.categoryId}
+              mapping={giscusConfig.mapping}
+              term={giscusConfig.term}
+              strict={giscusConfig.strict}
+              reactionsEnabled={giscusConfig.reactionsEnabled}
+              emitMetadata={giscusConfig.emitMetadata}
+              inputPosition={giscusConfig.inputPosition}
+              themeLight={giscusConfig.themeLight}
+              themeDark={giscusConfig.themeDark}
+              lang={giscusConfig.lang}
+              loading={giscusConfig.loading}
+            />
+          </div>
+        )
+      }
     </div>
   </div>
 
@@ -234,22 +263,4 @@ if (entry.data.image) {
       }
     </a>
   </div>
-
-  <script
-    is:inline
-    src="https://giscus.app/client.js"
-    data-repo="enable-if/blog"
-    data-repo-id="R_kgDOP8IbFQ"
-    data-category="Announcements"
-    data-category-id="DIC_kwDOP8IbFc4CwPd4"
-    data-mapping="pathname"
-    data-strict="0"
-    data-reactions-enabled="1"
-    data-emit-metadata="0"
-    data-input-position="bottom"
-    data-theme="preferred_color_scheme"
-    data-lang="zh-CN"
-    crossorigin="anonymous"
-    async
-  ></script>
 </MainGridLayout>
