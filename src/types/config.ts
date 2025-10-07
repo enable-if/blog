@@ -38,6 +38,12 @@ export type SiteConfig = {
 	};
 
 	favicon: Favicon[];
+	cdn?: {
+		/** Prefix for bundled assets (JS/CSS/optimized images) at build time */
+		assetsPrefix?: string;
+		/** Prefix for public/ static files at runtime (e.g., /favicon/*, /pagefind/*) */
+		publicPrefix?: string;
+	};
 	icp?: {
 		enable: boolean;
 		text: string;
