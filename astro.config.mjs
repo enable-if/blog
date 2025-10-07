@@ -15,7 +15,7 @@ import remarkDirective from "remark-directive"; /* Handle directives */
 import remarkGithubAdmonitionsToDirectives from "remark-github-admonitions-to-directives";
 import remarkMath from "remark-math";
 import remarkSectionize from "remark-sectionize";
-import { expressiveCodeConfig } from "./src/config.ts";
+import { expressiveCodeConfig, siteConfig as siteCfg } from "./src/config.ts";
 import { pluginCustomCopyButton } from "./src/plugins/expressive-code/custom-copy-button.js";
 import { pluginLanguageBadge } from "./src/plugins/expressive-code/language-badge.ts";
 import { AdmonitionComponent } from "./src/plugins/rehype-component-admonition.mjs";
@@ -38,13 +38,14 @@ export default defineConfig({
 			animationClass: "transition-swup-", // see https://swup.js.org/options/#animationselector
 			// the default value `transition-` cause transition delay
 			// when the Tailwind class `transition-all` is used
-			containers: ["main", "#toc"],
+			// Use precise containers to avoid mismatches during replacement
+			containers: ["#swup-container", "#toc"],
 			smoothScrolling: true,
 			cache: true,
 			preload: true,
 			accessibility: true,
 			updateHead: true,
-			updateBodyClass: false,
+			updateBodyClass: true,
 			globalInstance: true,
 		}),
 		icon({
@@ -154,6 +155,10 @@ export default defineConfig({
 				},
 			],
 		],
+	},
+	build: {
+		// Prefix bundled assets (JS/CSS/images) with a CDN origin when provided
+		assetsPrefix: siteCfg.cdn?.assetsPrefix,
 	},
 	vite: {
 		build: {

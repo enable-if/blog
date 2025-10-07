@@ -1,5 +1,6 @@
 import I18nKey from "@i18n/i18nKey";
 import { i18n } from "@i18n/translation";
+import { siteConfig } from "@/config";
 
 export function pathsEqual(path1: string, path2: string): boolean {
 	const normalizedPath1 = path1.replace(/^\/|\/$/g, "").toLowerCase();
@@ -41,4 +42,19 @@ export function getDir(path: string): string {
 
 export function url(path: string): string {
 	return joinUrl("", import.meta.env.BASE_URL, path);
+}
+
+/**
+ * Build a CDN-aware absolute path for public assets under `public/`.
+ * In dev, returns the original path. In prod, will prefix with PUBLIC_ASSET_PREFIX if provided.
+ * Use for href/src that point to files emitted to / (e.g. /pagefind/pagefind.js, /favicon/*, images under public).
+ */
+export function asset(path: string): string {
+	const p = url(path);
+	const prefix = siteConfig.cdn?.publicPrefix;
+	if (typeof prefix === "string" && prefix.trim().length > 0) {
+		// Ensure single slash join
+		return joinUrl(prefix.replace(/\/$/, ""), p);
+	}
+	return p;
 }

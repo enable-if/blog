@@ -18,7 +18,7 @@ export const siteConfig: SiteConfig = {
 	banner: {
 		enable: true,
 		src: "assets/images/banner.png", // Relative to the /src directory. Relative to the /public directory if it starts with '/'
-		usePostCover: true,
+		usePostCover: true, // If true, use post cover (page banner prop) when provided.
 		position: "bottom", // Equivalent to object-position, only supports 'top', 'center', 'bottom'. 'center' by default
 		credit: {
 			enable: false, // Display the credit text of the banner image
@@ -31,6 +31,8 @@ export const siteConfig: SiteConfig = {
 		depth: 2, // Maximum heading depth to show in the table, from 1 to 3
 	},
 	favicon: [
+		// Set favicons here to override the defaults.
+		// if null, use the default favicons provided in /public/favicon
 		// {
 		// 	src: "/favicon/icon-light.png",
 		// 	theme: "light",
@@ -40,9 +42,40 @@ export const siteConfig: SiteConfig = {
 		// 	theme: "dark",
 		// },
 	],
+	cdn: {
+		/**
+		 * CDN usage guide (no environment variables required):
+		 *
+		 * You can configure two independent CDN prefixes:
+		 * 1) assetsPrefix (build-time prefix)
+		 *    - Applies to: bundled outputs produced by Astro/Vite, e.g. JS, CSS, and imported/optimized images.
+		 *    - How it works: URLs are written into the generated files during build.
+		 *    - Requires rebuild: YES. Change the value, then run a new build before deployment.
+		 *    - Example: "https://cdn.example.com" (protocol and domain recommended; trailing slash optional).
+		 *
+		 * 2) publicPrefix (runtime prefix)
+		 *    - Applies to: files under /public (e.g. /favicon/*, /pagefind/*) and any path passed to asset("/path")
+		 *      from utils/url-utils.ts.
+		 *    - How it works: URLs are composed at runtime on the client; no need to rewrite build artifacts.
+		 *    - Requires rebuild: Usually NO. Change the value and redeploy the pages.
+		 *    - Example: "https://static.example.com".
+		 *
+		 * Common patterns:
+		 * - Single CDN for everything: set both prefixes to the same origin.
+		 * - Split responsibilities: use assetsPrefix for bundled assets, and publicPrefix for /public content.
+		 * - Disable a prefix: set it to an empty string or undefined.
+		 *
+		 * Notes:
+		 * - Ensure your CDN allows required CORS for fonts/scripts if needed, and enable compression (Brotli/Gzip).
+		 * - Make sure /pagefind/* can be cached and fetched correctly from the CDN.
+		 * - Slashes are normalized internally; trailing slash is optional.
+		 */
+		assetsPrefix: "",
+		publicPrefix: "",
+	},
 	icp: {
-		enable: false,
-		text: "",
+		enable: false, // Whether to display ICP information in the footer
+		text: "", // ICP text, e.g. "吉ICP备1234567890号-1"
 		url: "https://beian.miit.gov.cn/",
 	},
 };

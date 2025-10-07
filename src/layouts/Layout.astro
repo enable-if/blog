@@ -17,7 +17,7 @@ import {
 } from "../constants/constants";
 import { defaultFavicons } from "../constants/icon";
 import type { Favicon } from "../types/config";
-import { pathsEqual, url } from "../utils/url-utils";
+import { asset, pathsEqual, url } from "../utils/url-utils";
 import "katex/dist/katex.css";
 
 interface Props {
@@ -111,7 +111,7 @@ const bannerOffset =
       favicons.map((favicon) => (
         <link
           rel="icon"
-          href={favicon.src.startsWith("/") ? url(favicon.src) : favicon.src}
+          href={favicon.src.startsWith("/") ? asset(favicon.src) : favicon.src}
           sizes={favicon.sizes}
           media={favicon.theme && `(prefers-color-scheme: ${favicon.theme})`}
         />
@@ -511,7 +511,7 @@ function disableAnimation() {
       // hide the temp high element when the transition is done
       const heightExtend = document.getElementById("page-height-extend");
       if (heightExtend) {
-        heightExtend.classList.remove("hidden");
+        heightExtend.classList.add("hidden");
       }
     });
     window.swup.hooks.on("visit:end", (_visit: { to: { url: string } }) => {
