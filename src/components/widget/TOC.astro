@@ -4,27 +4,27 @@ import { siteConfig } from "../../config";
 import { url } from "../../utils/url-utils";
 
 interface Props {
-  class?: string;
-  headings: MarkdownHeading[];
+	class?: string;
+	headings: MarkdownHeading[];
 }
 
 let { headings = [] } = Astro.props;
 
 let minDepth = 10;
 for (const heading of headings) {
-  minDepth = Math.min(minDepth, heading.depth);
+	minDepth = Math.min(minDepth, heading.depth);
 }
 
 const className = Astro.props.class;
 const isPostsRoute = Astro.url.pathname.startsWith(url("/posts/"));
 
 const removeTailingHash = (text: string) => {
-  let lastIndexOfHash = text.lastIndexOf("#");
-  if (lastIndexOfHash !== text.length - 1) {
-    return text;
-  }
+	let lastIndexOfHash = text.lastIndexOf("#");
+	if (lastIndexOfHash !== text.length - 1) {
+		return text;
+	}
 
-  return text.substring(0, lastIndexOfHash);
+	return text.substring(0, lastIndexOfHash);
 };
 
 let heading1Count = 1;
@@ -102,6 +102,10 @@ const maxLevel = siteConfig.toc.depth;
     tocEntries: HTMLAnchorElement[] = [];
     active: boolean[] = [];
     activeIndicator: HTMLElement | null = null;
+  lastIndicatorTop: number | null = null;
+  lastIndicatorHeight: number | null = null;
+  lastScrollTargetTop: number | null = null;
+  updateScheduled = false;
 
     constructor() {
       super();
@@ -148,20 +152,28 @@ const maxLevel = siteConfig.toc.depth;
       if (min > max) {
         this.activeIndicator?.setAttribute("style", `opacity: 0`);
       } else {
-        let parentOffset = this.tocEl?.getBoundingClientRect().top || 0;
-        let scrollOffset = this.tocEl?.scrollTop || 0;
-        let top =
-          this.tocEntries[min].getBoundingClientRect().top -
-          parentOffset +
-          scrollOffset;
-        let bottom =
-          this.tocEntries[max].getBoundingClientRect().bottom -
-          parentOffset +
-          scrollOffset;
-        this.activeIndicator?.setAttribute(
-          "style",
-          `top: ${top}px; height: ${bottom - top}px`
-        );
+        // Cache rects to avoid repeated layout reads
+        const parentRectTop = this.tocEl?.getBoundingClientRect().top || 0;
+        const scrollOffset = this.tocEl?.scrollTop || 0;
+        const minRect = this.tocEntries[min].getBoundingClientRect();
+        const maxRect = this.tocEntries[max].getBoundingClientRect();
+        const top = minRect.top - parentRectTop + scrollOffset;
+        const bottom = maxRect.bottom - parentRectTop + scrollOffset;
+        const height = bottom - top;
+        // Only update style when delta is large enough to be visible (avoid layout work churn)
+        if (
+          this.lastIndicatorTop === null ||
+          Math.abs(top - this.lastIndicatorTop) > 1 ||
+          this.lastIndicatorHeight === null ||
+          Math.abs(height - this.lastIndicatorHeight) > 1
+        ) {
+          this.activeIndicator?.setAttribute(
+            "style",
+            `top: ${top}px; height: ${height}px`
+          );
+          this.lastIndicatorTop = top;
+          this.lastIndicatorHeight = height;
+        }
       }
     };
 
@@ -189,19 +201,25 @@ const maxLevel = siteConfig.toc.depth;
         top = topmost.offsetTop - 32;
       else top = bottommost.offsetTop - tocHeight * 0.8;
 
-      this.tocEl.scrollTo({
-        top,
-        left: 0,
-        behavior: "smooth",
-      });
+      // Skip if target didn't change significantly
+      if (this.lastScrollTargetTop === null || Math.abs(top - this.lastScrollTargetTop) > 2) {
+        this.lastScrollTargetTop = top;
+        this.tocEl.scrollTo({
+          top,
+          left: 0,
+          behavior: "smooth",
+        });
+      }
     };
 
+    // Coalesce multiple update requests into a single rAF
     update = () => {
+      if (this.updateScheduled) return;
+      this.updateScheduled = true;
       requestAnimationFrame(() => {
+        this.updateScheduled = false;
         this.toggleActiveHeading();
-        // requestAnimationFrame(() => {
         this.scrollToActiveHeading();
-        // });
       });
     };
 
@@ -209,8 +227,9 @@ const maxLevel = siteConfig.toc.depth;
       if (!this.sections.length) return;
 
       for (let i = 0; i < this.sections.length; i++) {
-        let offsetTop = this.sections[i].getBoundingClientRect().top;
-        let offsetBottom = this.sections[i].getBoundingClientRect().bottom;
+        const rect = this.sections[i].getBoundingClientRect();
+        const offsetTop = rect.top;
+        const offsetBottom = rect.bottom;
 
         if (
           this.isInRange(offsetTop, 0, window.innerHeight) ||

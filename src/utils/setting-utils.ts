@@ -7,17 +7,27 @@ import {
 import { expressiveCodeConfig } from "@/config";
 import type { LIGHT_DARK_MODE } from "@/types/config";
 
+/**
+ * Read the default hue from the in-DOM carrier element (or fallback).
+ * Used as initial color accent when the user hasn't customized it yet.
+ */
 export function getDefaultHue(): number {
 	const fallback = "250";
 	const configCarrier = document.getElementById("config-carrier");
 	return Number.parseInt(configCarrier?.dataset.hue || fallback, 10);
 }
 
+/**
+ * Get user's selected hue from localStorage, otherwise the default hue.
+ */
 export function getHue(): number {
 	const stored = localStorage.getItem("hue");
 	return stored ? Number.parseInt(stored, 10) : getDefaultHue();
 }
 
+/**
+ * Persist hue selection and update the CSS variable on <html>.
+ */
 export function setHue(hue: number): void {
 	localStorage.setItem("hue", String(hue));
 	const r = document.documentElement as HTMLElement;
@@ -26,6 +36,9 @@ export function setHue(hue: number): void {
 	}
 }
 
+/**
+ * Apply light/dark/auto theme to the <html> element and sync Expressive Code theme.
+ */
 export function applyThemeToDocument(theme: LIGHT_DARK_MODE): void {
 	// Track whether document is dark at the end of this function
 	let isDark = false;
@@ -65,11 +78,17 @@ export function applyThemeToDocument(theme: LIGHT_DARK_MODE): void {
 	});
 }
 
+/**
+ * Persist theme to localStorage and apply it immediately.
+ */
 export function setTheme(theme: LIGHT_DARK_MODE): void {
 	localStorage.setItem("theme", theme);
 	applyThemeToDocument(theme);
 }
 
+/**
+ * Read theme from localStorage, fallback to DEFAULT_THEME.
+ */
 export function getStoredTheme(): LIGHT_DARK_MODE {
 	return (localStorage.getItem("theme") as LIGHT_DARK_MODE) || DEFAULT_THEME;
 }

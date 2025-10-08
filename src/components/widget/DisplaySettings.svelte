@@ -1,10 +1,11 @@
 <script lang="ts">
-// 性能说明：
-// 以前通过 `$:` 响应式在每次滑动时调用 setHue，会同步写入 localStorage 且导致整页基于 --hue 的样式重算，
-// 在高频 on:input 事件下造成卡顿。现在改为：
-// - on:input 仅通过 requestAnimationFrame 预览 CSS 变量 --hue（不落盘）；
-// - on:change（松手）时再调用 setHue 持久化到 localStorage。
-// 这样能显著降低主线程负担并保持流畅拖动体验。
+// Performance note:
+// Previously we used a reactive `$:` to call setHue on every slider move,
+// which wrote to localStorage and caused page-wide style recalculation.
+// Now we:
+// - Use requestAnimationFrame on `on:input` to preview via CSS variable only (no persistence)
+// - Persist with setHue on `on:change` (when finger/mouse is released)
+// This approach reduces main-thread work and keeps the drag interaction smooth.
 import I18nKey from "@i18n/i18nKey";
 import { i18n } from "@i18n/translation";
 import Icon from "@iconify/svelte";

@@ -6,14 +6,14 @@ import "@fontsource/roboto/700.css";
 import ConfigCarrier from "@components/ConfigCarrier.astro";
 import { profileConfig, siteConfig } from "@/config";
 import {
-  AUTO_MODE,
-  BANNER_HEIGHT,
-  BANNER_HEIGHT_EXTEND,
-  BANNER_HEIGHT_HOME,
-  DARK_MODE,
-  DEFAULT_THEME,
-  LIGHT_MODE,
-  PAGE_WIDTH,
+	AUTO_MODE,
+	BANNER_HEIGHT,
+	BANNER_HEIGHT_EXTEND,
+	BANNER_HEIGHT_HOME,
+	DARK_MODE,
+	DEFAULT_THEME,
+	LIGHT_MODE,
+	PAGE_WIDTH,
 } from "../constants/constants";
 import { defaultFavicons } from "../constants/icon";
 import type { Favicon } from "../types/config";
@@ -21,11 +21,11 @@ import { asset, pathsEqual, url } from "../utils/url-utils";
 import "katex/dist/katex.css";
 
 interface Props {
-  title?: string;
-  banner?: string;
-  description?: string;
-  lang?: string;
-  setOGTypeArticle?: boolean;
+	title?: string;
+	banner?: string;
+	description?: string;
+	lang?: string;
+	setOGTypeArticle?: boolean;
 }
 
 let { title, banner, description, lang, setOGTypeArticle } = Astro.props;
@@ -40,39 +40,39 @@ const isHomePage = pathsEqual(Astro.url.pathname, url("/"));
 const configHue = siteConfig.themeColor.hue;
 // Respect switch: when usePostCover is true and a banner is provided by the page, use it; otherwise fallback to site default.
 if (
-  !siteConfig.banner.usePostCover ||
-  !banner ||
-  typeof banner !== "string" ||
-  banner.trim() === ""
+	!siteConfig.banner.usePostCover ||
+	!banner ||
+	typeof banner !== "string" ||
+	banner.trim() === ""
 ) {
-  banner = siteConfig.banner.src;
+	banner = siteConfig.banner.src;
 }
 
 const enableBanner = siteConfig.banner.enable;
 
 let pageTitle: string;
 if (title) {
-  pageTitle = `${title} - ${siteConfig.title}`;
+	pageTitle = `${title} - ${siteConfig.title}`;
 } else {
-  pageTitle = `${siteConfig.title} - ${siteConfig.subtitle}`;
+	pageTitle = `${siteConfig.title} - ${siteConfig.subtitle}`;
 }
 
 const favicons: Favicon[] =
-  siteConfig.favicon.length > 0 ? siteConfig.favicon : defaultFavicons;
+	siteConfig.favicon.length > 0 ? siteConfig.favicon : defaultFavicons;
 
 // const siteLang = siteConfig.lang.replace('_', '-')
 if (!lang) {
-  lang = `${siteConfig.lang}`;
+	lang = `${siteConfig.lang}`;
 }
 const siteLang = lang.replace("_", "-");
 
 const bannerOffsetByPosition = {
-  top: `${BANNER_HEIGHT_EXTEND}vh`,
-  center: `${BANNER_HEIGHT_EXTEND / 2}vh`,
-  bottom: "0",
+	top: `${BANNER_HEIGHT_EXTEND}vh`,
+	center: `${BANNER_HEIGHT_EXTEND / 2}vh`,
+	bottom: "0",
 };
 const bannerOffset =
-  bannerOffsetByPosition[siteConfig.banner.position || "center"];
+	bannerOffsetByPosition[siteConfig.banner.position || "center"];
 ---
 
 <!doctype html>
@@ -360,16 +360,18 @@ function disableAnimation() {
     setHue(getHue());
   }
 
+  // Initialize OverlayScrollbars with guards to avoid duplicate init on body
   function initCustomScrollbar() {
     const bodyElement = document.querySelector("body");
     if (!bodyElement) return;
-    OverlayScrollbars(
-      // docs say that a initialization to the body element would affect native functionality like window.scrollTo
-      // but just leave it here for now
+    // @ts-ignore runtime guard for repeated init across swaps
+    if (window.__osBody) return;
+    const instance = OverlayScrollbars(
       {
+        // Initializing on <body> can affect native APIs according to docs; we opt-in for consistent styling
         target: bodyElement,
         cancel: {
-          nativeScrollbarsOverlaid: true, // don't initialize the overlay scrollbar if there is a native one
+          nativeScrollbarsOverlaid: true, // skip when native overlay scrollbars are present
         },
       },
       {
@@ -381,6 +383,8 @@ function disableAnimation() {
         },
       }
     );
+    // @ts-ignore store instance on window to prevent duplicates
+    window.__osBody = instance;
 
     const katexElements = document.querySelectorAll(
       ".katex-display"
@@ -445,7 +449,13 @@ function disableAnimation() {
     // disableAnimation()()		// TODO
     loadTheme();
     loadHue();
-    initCustomScrollbar();
+    // Defer heavy scrollbar initialization to an idle slot or a short timeout
+    if ("requestIdleCallback" in window) {
+      // @ts-ignore
+      window.requestIdleCallback(() => initCustomScrollbar(), { timeout: 800 });
+    } else {
+      setTimeout(initCustomScrollbar, 200);
+    }
     showBanner();
   }
 
@@ -485,7 +495,17 @@ function disableAnimation() {
         navbar.classList.add("navbar-hidden");
       }
     });
-    window.swup.hooks.on("content:replace", initCustomScrollbar);
+    window.swup.hooks.on("content:replace", () => {
+      // Re-evaluate scrollbars lazily after DOM replacement
+      if ("requestIdleCallback" in window) {
+        // @ts-ignore
+        window.requestIdleCallback(() => initCustomScrollbar(), {
+          timeout: 800,
+        });
+      } else {
+        setTimeout(initCustomScrollbar, 200);
+      }
+    });
     window.swup.hooks.on("visit:start", (visit: { to: { url: string } }) => {
       // change banner height immediately when a link is clicked
       const bodyElement = document.querySelector("body");
@@ -538,61 +558,77 @@ function disableAnimation() {
   let backToTopBtn = document.getElementById("back-to-top-btn");
   let toc = document.getElementById("toc-wrapper");
   let navbar = document.getElementById("navbar-wrapper");
-  function scrollFunction() {
-    let bannerHeight = window.innerHeight * (BANNER_HEIGHT / 100);
+  // rAF-throttled scroll processing to minimize layout thrash
+  let scrollScheduled = false;
+  let lastScrollY = 0;
+  // Track last applied states to avoid redundant classList writes
+  let backToTopVisible = false;
+  let tocVisible = false;
+  let navbarIsHidden = false;
+  function processScroll() {
+    scrollScheduled = false;
+    const scrollY = lastScrollY;
+    // Distance threshold for floating buttons and TOC visibility
+    const bannerHeightPx = window.innerHeight * (BANNER_HEIGHT / 100);
 
+    // Batch writes after reads
     if (backToTopBtn) {
-      if (
-        document.body.scrollTop > bannerHeight ||
-        document.documentElement.scrollTop > bannerHeight
-      ) {
-        backToTopBtn.classList.remove("hide");
-      } else {
-        backToTopBtn.classList.add("hide");
+      const nextVisible = scrollY > bannerHeightPx;
+      if (nextVisible !== backToTopVisible) {
+        backToTopVisible = nextVisible;
+        backToTopBtn.classList.toggle("hide", !nextVisible);
       }
     }
 
     if (bannerEnabled && toc) {
-      if (
-        document.body.scrollTop > bannerHeight ||
-        document.documentElement.scrollTop > bannerHeight
-      ) {
-        toc.classList.remove("toc-hide");
-      } else {
-        toc.classList.add("toc-hide");
+      const nextTocVisible = scrollY > bannerHeightPx;
+      if (nextTocVisible !== tocVisible) {
+        tocVisible = nextTocVisible;
+        toc.classList.toggle("toc-hide", !nextTocVisible);
       }
     }
 
-    if (!bannerEnabled) return;
-    if (navbar) {
-      const NAVBAR_HEIGHT = 72;
-      const MAIN_PANEL_EXCESS_HEIGHT = MAIN_PANEL_OVERLAPS_BANNER_HEIGHT * 16; // The height the main panel overlaps the banner
+    if (!bannerEnabled || !navbar) return;
 
-      let bannerHeight = BANNER_HEIGHT;
-      if (
-        document.body.classList.contains("lg:is-home") &&
-        window.innerWidth >= 1024
-      ) {
-        bannerHeight = BANNER_HEIGHT_HOME;
-      }
-      let threshold =
-        window.innerHeight * (bannerHeight / 100) -
-        NAVBAR_HEIGHT -
-        MAIN_PANEL_EXCESS_HEIGHT -
-        16;
-      if (
-        document.body.scrollTop >= threshold ||
-        document.documentElement.scrollTop >= threshold
-      ) {
-        navbar.classList.add("navbar-hidden");
-      } else {
-        navbar.classList.remove("navbar-hidden");
-      }
+    const NAVBAR_HEIGHT = 72;
+    const MAIN_PANEL_EXCESS_HEIGHT = MAIN_PANEL_OVERLAPS_BANNER_HEIGHT * 16; // The height the main panel overlaps the banner
+
+    let bannerHeight = BANNER_HEIGHT;
+    if (
+      document.body.classList.contains("lg:is-home") &&
+      window.innerWidth >= 1024
+    ) {
+      bannerHeight = BANNER_HEIGHT_HOME;
+    }
+    const threshold =
+      window.innerHeight * (bannerHeight / 100) -
+      NAVBAR_HEIGHT -
+      MAIN_PANEL_EXCESS_HEIGHT -
+      16;
+
+    const nextHidden = scrollY >= threshold;
+    if (nextHidden !== navbarIsHidden) {
+      navbarIsHidden = nextHidden;
+      navbar.classList.toggle("navbar-hidden", nextHidden);
     }
   }
-  window.onscroll = scrollFunction;
+  function onScroll() {
+    lastScrollY =
+      window.scrollY ||
+      document.documentElement.scrollTop ||
+      document.body.scrollTop ||
+      0;
+    if (!scrollScheduled) {
+      scrollScheduled = true;
+      requestAnimationFrame(processScroll);
+    }
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
 
-  window.onresize = () => {
+  // rAF-throttled resize handler (computes a CSS var used by layout)
+  let resizeScheduled = false;
+  function processResize() {
+    resizeScheduled = false;
     // calculate the --banner-height-extend, which needs to be a multiple of 4 to avoid blurry text
     let offset = Math.floor(window.innerHeight * (BANNER_HEIGHT_EXTEND / 100));
     offset = offset - (offset % 4);
@@ -600,7 +636,16 @@ function disableAnimation() {
       "--banner-height-extend",
       `${offset}px`
     );
-  };
+    // also re-run scroll computations to reflect new viewport
+    onScroll();
+  }
+  function onResize() {
+    if (!resizeScheduled) {
+      resizeScheduled = true;
+      requestAnimationFrame(processResize);
+    }
+  }
+  window.addEventListener("resize", onResize, { passive: true });
 </script>
 
 <script>
@@ -644,17 +689,45 @@ function disableAnimation() {
   }
 
   const setup = () => {
-    if (!lightbox) {
-      createPhotoSwipe();
-    }
+    // On-demand bootstrap: initialize lightbox upon first user click on an eligible image
+    const selector = ".custom-md img, #post-cover img";
+    const bootstrapOnFirstClick = (ev: Event) => {
+      const target = ev.target as Element | null;
+      if (!target) return;
+      if (!(target instanceof Element)) return;
+      if (!target.matches(selector)) return;
+      if (lightbox) return; // already ready
+      ev.preventDefault();
+      const again = () => (target as HTMLElement).click();
+      const run = () => {
+        if (!lightbox) createPhotoSwipe();
+        // allow PhotoSwipe to attach listeners, then replay click
+        setTimeout(again, 0);
+        document.removeEventListener("click", bootstrapOnFirstClick, true);
+      };
+      if ("requestIdleCallback" in window) {
+        // @ts-ignore
+        window.requestIdleCallback(run, { timeout: 500 });
+      } else {
+        setTimeout(run, 0);
+      }
+    };
+    document.addEventListener("click", bootstrapOnFirstClick, {
+      capture: true,
+    });
+
     window.swup.hooks.on("page:view", () => {
-      createPhotoSwipe();
+      // Keep the bootstrap listener active across views
     });
 
     window.swup.hooks.on(
       "content:replace",
       () => {
         lightbox?.destroy?.();
+        // reset so next page can schedule lazily again
+        // @ts-ignore
+        lightbox = undefined;
+        initScheduled = false;
       },
       { before: true }
     );
