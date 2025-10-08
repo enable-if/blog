@@ -4,27 +4,27 @@ import { siteConfig } from "../../config";
 import { url } from "../../utils/url-utils";
 
 interface Props {
-	class?: string;
-	headings: MarkdownHeading[];
+  class?: string;
+  headings: MarkdownHeading[];
 }
 
 let { headings = [] } = Astro.props;
 
 let minDepth = 10;
 for (const heading of headings) {
-	minDepth = Math.min(minDepth, heading.depth);
+  minDepth = Math.min(minDepth, heading.depth);
 }
 
 const className = Astro.props.class;
 const isPostsRoute = Astro.url.pathname.startsWith(url("/posts/"));
 
 const removeTailingHash = (text: string) => {
-	let lastIndexOfHash = text.lastIndexOf("#");
-	if (lastIndexOfHash !== text.length - 1) {
-		return text;
-	}
+  let lastIndexOfHash = text.lastIndexOf("#");
+  if (lastIndexOfHash !== text.length - 1) {
+    return text;
+  }
 
-	return text.substring(0, lastIndexOfHash);
+  return text.substring(0, lastIndexOfHash);
 };
 
 let heading1Count = 1;
@@ -102,10 +102,10 @@ const maxLevel = siteConfig.toc.depth;
     tocEntries: HTMLAnchorElement[] = [];
     active: boolean[] = [];
     activeIndicator: HTMLElement | null = null;
-  lastIndicatorTop: number | null = null;
-  lastIndicatorHeight: number | null = null;
-  lastScrollTargetTop: number | null = null;
-  updateScheduled = false;
+    lastIndicatorTop: number | null = null;
+    lastIndicatorHeight: number | null = null;
+    lastScrollTargetTop: number | null = null;
+    updateScheduled = false;
 
     constructor() {
       super();
@@ -202,7 +202,10 @@ const maxLevel = siteConfig.toc.depth;
       else top = bottommost.offsetTop - tocHeight * 0.8;
 
       // Skip if target didn't change significantly
-      if (this.lastScrollTargetTop === null || Math.abs(top - this.lastScrollTargetTop) > 2) {
+      if (
+        this.lastScrollTargetTop === null ||
+        Math.abs(top - this.lastScrollTargetTop) > 2
+      ) {
         this.lastScrollTargetTop = top;
         this.tocEl.scrollTo({
           top,
