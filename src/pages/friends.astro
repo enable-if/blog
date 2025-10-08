@@ -8,26 +8,26 @@ import MainGridLayout from "../layouts/MainGridLayout.astro";
 const friendsPost = await getEntry("spec", "friends");
 
 if (!friendsPost) {
-  throw new Error("Friend page content not found");
+	throw new Error("Friend page content not found");
 }
 
 const { Content } = await render(friendsPost);
 
 const items = [
-  {
-    title: "Astro",
-    imgurl: "https://avatars.githubusercontent.com/u/44914786?s=190&v=4",
-    desc: "The web framework for content-driven websites. ⭐️ Star to support our work!",
-    siteurl: "https://github.com/withastro/astro",
-    tags: ["博客框架"],
-  },
-  {
-    title: "Cdm2883 的个人博客",
-    imgurl: "https://q1.qlogo.cn/g?b=qq&nk=1759370644&s=140",
-    desc: "我的中文个人博客 =￣ω￣=",
-    siteurl: "https://blog.cdms.vip/",
-    tags: ["个人博客"],
-  },
+	{
+		title: "Astro",
+		imgurl: "https://avatars.githubusercontent.com/u/44914786?s=190&v=4",
+		desc: "The web framework for content-driven websites. ⭐️ Star to support our work!",
+		siteurl: "https://github.com/withastro/astro",
+		tags: ["博客框架"],
+	},
+	{
+		title: "Cdm2883 的个人博客",
+		imgurl: "https://q1.qlogo.cn/g?b=qq&nk=1759370644&s=140",
+		desc: "我的中文个人博客 =￣ω￣=",
+		siteurl: "https://blog.cdms.vip/",
+		tags: ["个人博客"],
+	},
 ];
 ---
 
