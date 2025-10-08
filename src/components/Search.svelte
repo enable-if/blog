@@ -12,6 +12,8 @@ let result: SearchResult[] = [];
 let isSearching = false;
 let pagefindLoaded = false;
 let initialized = false;
+let searchTimer: number | null = null;
+const DEBOUNCE_MS = 150;
 
 const fakeResult: SearchResult[] = [
 	{
@@ -125,16 +127,16 @@ onMount(() => {
 	}
 });
 
-$: if (initialized && keywordDesktop) {
-	(async () => {
-		await search(keywordDesktop, true);
-	})();
-}
-
-$: if (initialized && keywordMobile) {
-	(async () => {
-		await search(keywordMobile, false);
-	})();
+$: if (initialized) {
+	const currentDesktop = keywordDesktop;
+	const currentMobile = keywordMobile;
+	if (searchTimer !== null) {
+		clearTimeout(searchTimer);
+	}
+	searchTimer = window.setTimeout(() => {
+		void search(currentDesktop, true);
+		void search(currentMobile, false);
+	}, DEBOUNCE_MS);
 }
 </script>
 
