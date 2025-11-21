@@ -197,14 +197,32 @@ const bannerOffset =
       }}
     ></style>
     <script is:inline>
-      try {
-        if (sessionStorage.getItem("appWarm")) {
-          document.documentElement.dataset.coldStart = "false";
-          document.documentElement.classList.add("cold-start-complete");
+      (() => {
+        const docEl = document.documentElement;
+
+        const hasSessionWarm = (() => {
+          try {
+            return sessionStorage.getItem("appWarm") === "1";
+          } catch (error) {
+            return false;
+          }
+        })();
+
+        const isReloadNavigation = (() => {
+          const navEntry = performance?.getEntriesByType?.("navigation")?.[0];
+          if (navEntry && "type" in navEntry) {
+            return navEntry.type === "reload";
+          }
+          const legacy = performance?.navigation;
+          return legacy?.type === legacy?.TYPE_RELOAD || legacy?.type === 1;
+        })();
+
+        const shouldSkipLoader = hasSessionWarm && !isReloadNavigation;
+        docEl.dataset.coldStart = shouldSkipLoader ? "false" : "true";
+        if (shouldSkipLoader) {
+          docEl.classList.add("cold-start-complete");
         }
-      } catch (error) {
-        document.documentElement.dataset.coldStart = "true";
-      }
+      })();
     </script>
     <!-- defines global css variables. This will be applied to <html> <body> and some other elements idk why -->
 
@@ -555,7 +573,7 @@ function disableAnimation() {
   const bannerEnabled = !!document.getElementById("banner-wrapper");
 
   // Show a cold-start progress overlay once per browser tab session.
-  function setupColdStartLoader() {
+  (function setupColdStartLoader() {
     const html = document.documentElement;
     const loader = document.getElementById("cold-start-loader");
     if (!loader || html.dataset.coldStart !== "true") {
@@ -566,7 +584,6 @@ function disableAnimation() {
       "[data-progress]"
     ) as HTMLElement | null;
     let progressValue = 12;
-
     const setProgress = (value: number) => {
       progressValue = value;
       if (progressTrack) {
@@ -583,55 +600,66 @@ function disableAnimation() {
       setProgress(Math.min(progressValue + easedStep + jitter, 92));
     };
 
-    advance();
-    const timer = window.setInterval(advance, 320);
+    let timer: number | undefined;
+    const startProgress = () => {
+      advance();
+      timer = window.setInterval(advance, 320);
+    };
 
     const finalize = () => {
-      clearInterval(timer);
-      if (progressTrack) {
-        progressTrack.style.setProperty("--cold-progress", "100%");
+      if (timer !== undefined) {
+        clearInterval(timer);
       }
+      progressTrack?.style.setProperty("--cold-progress", "100%");
       loader.classList.add("cold-start-loader--done");
       html.dataset.coldStart = "false";
       html.classList.add("cold-start-complete");
       try {
         sessionStorage.setItem("appWarm", "1");
       } catch (error) {
-        /* no-op */
+        /* ignore */
       }
       window.setTimeout(() => loader.remove(), 320);
     };
 
-    const debugHold =
+    const enableDebugHold =
       window.location.search.includes("debugColdLoader=true") ||
       window.location.hash.includes("debug-cold-loader");
 
-    if (debugHold) {
-      clearInterval(timer);
+    if (enableDebugHold) {
       setProgress(64);
-      html.dataset.coldStart = "true";
       loader.setAttribute("data-debug", "true");
+      html.dataset.coldStart = "true";
       try {
         sessionStorage.removeItem("appWarm");
       } catch (error) {
-        /* no-op */
+        /* ignore */
       }
       (
         window as typeof window & {
           __resumeColdLoader?: () => void;
         }
-      ).__resumeColdLoader = finalize;
+      ).__resumeColdLoader = () => {
+        startProgress();
+        finalize();
+      };
       return;
     }
 
     if (document.readyState === "complete") {
+      startProgress();
       finalize();
     } else {
-      window.addEventListener("load", finalize, { once: true });
+      window.addEventListener(
+        "load",
+        () => {
+          startProgress();
+          finalize();
+        },
+        { once: true }
+      );
     }
-  }
-
-  setupColdStartLoader();
+  })();
 
   function setClickOutsideToClose(
     panel: string,
