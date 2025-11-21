@@ -36,4 +36,14 @@ export const tr: Translation = {
 	[Key.publishedAt]: "Yayınlanma:",
 	[Key.license]: "Lisans",
 	[Key.friends]: "Arkadaşlar",
+
+	[Key.contentValidityFreshLabel]: "Güncel içerik",
+	[Key.contentValidityFreshDescription]:
+		"Son {{freshMonths}} ay içinde yayımlandı; ayrıntılar hâlâ geçerli.",
+	[Key.contentValidityCautionLabel]: "Güncellemeleri kontrol et",
+	[Key.contentValidityCautionDescription]:
+		"{{freshMonths}} aydan uzun süre önce yayımlandı; bazı bilgiler değişmiş olabilir.",
+	[Key.contentValidityExpiredLabel]: "Süresi dolan içerik",
+	[Key.contentValidityExpiredDescription]:
+		"{{cautionMonths}} aydan uzun süre önce yayımlandı; bilgiler geçerliliğini yitirmiş olabilir.",
 };

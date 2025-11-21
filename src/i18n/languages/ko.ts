@@ -36,4 +36,14 @@ export const ko: Translation = {
 	[Key.publishedAt]: "게시일",
 	[Key.license]: "라이선스",
 	[Key.friends]: "친구",
+
+	[Key.contentValidityFreshLabel]: "최신 콘텐츠",
+	[Key.contentValidityFreshDescription]:
+		"최근 {{freshMonths}}개월 이내에 게시되어 정보가 정확합니다.",
+	[Key.contentValidityCautionLabel]: "업데이트 여부 확인",
+	[Key.contentValidityCautionDescription]:
+		"{{freshMonths}}개월 이상 전에 게시되어 일부 내용이 달라졌을 수 있습니다.",
+	[Key.contentValidityExpiredLabel]: "만료된 콘텐츠",
+	[Key.contentValidityExpiredDescription]:
+		"{{cautionMonths}}개월 이상 전에 게시되어 정보가 크게 달라졌을 수 있습니다.",
 };

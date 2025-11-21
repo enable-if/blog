@@ -36,4 +36,14 @@ export const id: Translation = {
 	[Key.publishedAt]: "Diterbitkan pada",
 	[Key.license]: "Lisensi",
 	[Key.friends]: "Teman",
+
+	[Key.contentValidityFreshLabel]: "Konten terbaru",
+	[Key.contentValidityFreshDescription]:
+		"Terbit dalam {{freshMonths}} bulan terakhir; detailnya masih akurat.",
+	[Key.contentValidityCautionLabel]: "Periksa pembaruan",
+	[Key.contentValidityCautionDescription]:
+		"Terbit lebih dari {{freshMonths}} bulan lalu; beberapa detail mungkin berubah.",
+	[Key.contentValidityExpiredLabel]: "Konten kedaluwarsa",
+	[Key.contentValidityExpiredDescription]:
+		"Terbit lebih dari {{cautionMonths}} bulan lalu; informasinya bisa tidak berlaku.",
 };

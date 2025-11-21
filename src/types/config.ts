@@ -140,3 +140,24 @@ export type GiscusConfig = {
 	lang?: string;
 	loading?: "lazy" | "eager";
 };
+
+export type ContentValidityStage = "fresh" | "caution" | "expired";
+
+export type ContentValidityBannerStyle = {
+	icon: string;
+	/** Base accent color mixed with theme hues to create stage-specific palette */
+	accent: string;
+};
+
+export type ContentValidityConfig = {
+	enable: boolean;
+	thresholds: {
+		/** Maximum age in months considered fully up-to-date */
+		freshMonths: number;
+		/** Maximum age in months considered cautionary before expiring */
+		cautionMonths: number;
+	};
+	banner: {
+		[stage in ContentValidityStage]: ContentValidityBannerStyle;
+	};
+};

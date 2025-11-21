@@ -36,4 +36,14 @@ export const es: Translation = {
 	[Key.publishedAt]: "Publicado el",
 	[Key.license]: "Licencia",
 	[Key.friends]: "Amigos",
+
+	[Key.contentValidityFreshLabel]: "Contenido actualizado",
+	[Key.contentValidityFreshDescription]:
+		"Publicado en los últimos {{freshMonths}} meses; los detalles siguen vigentes.",
+	[Key.contentValidityCautionLabel]: "Revisa posibles cambios",
+	[Key.contentValidityCautionDescription]:
+		"Publicado hace más de {{freshMonths}} meses; algunos datos pueden haber cambiado.",
+	[Key.contentValidityExpiredLabel]: "Contenido vencido",
+	[Key.contentValidityExpiredDescription]:
+		"Publicado hace más de {{cautionMonths}} meses; la información podría estar obsoleta.",
 };

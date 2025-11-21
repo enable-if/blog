@@ -33,6 +33,13 @@ enum I18nKey {
 	publishedAt = "publishedAt",
 	license = "license",
 	friends = "friends",
+
+	contentValidityFreshLabel = "contentValidityFreshLabel",
+	contentValidityFreshDescription = "contentValidityFreshDescription",
+	contentValidityCautionLabel = "contentValidityCautionLabel",
+	contentValidityCautionDescription = "contentValidityCautionDescription",
+	contentValidityExpiredLabel = "contentValidityExpiredLabel",
+	contentValidityExpiredDescription = "contentValidityExpiredDescription",
 }
 
 export default I18nKey;

@@ -36,4 +36,14 @@ export const th: Translation = {
 	[Key.publishedAt]: "เผยแพร่เมื่อ",
 	[Key.license]: "สัญญาอนุญาต",
 	[Key.friends]: "เพื่อน",
+
+	[Key.contentValidityFreshLabel]: "เนื้อหาอัปเดต",
+	[Key.contentValidityFreshDescription]:
+		"เผยแพร่ภายใน {{freshMonths}} เดือนที่ผ่านมา รายละเอียดยังถูกต้อง",
+	[Key.contentValidityCautionLabel]: "โปรดตรวจสอบข้อมูล",
+	[Key.contentValidityCautionDescription]:
+		"เผยแพร่มากกว่า {{freshMonths}} เดือน บางส่วนอาจเปลี่ยนไปแล้ว",
+	[Key.contentValidityExpiredLabel]: "เนื้อหาหมดอายุ",
+	[Key.contentValidityExpiredDescription]:
+		"เผยแพร่มากกว่า {{cautionMonths}} เดือน ข้อมูลอาจไม่ถูกต้องแล้ว",
 };

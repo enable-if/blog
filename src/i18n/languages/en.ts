@@ -36,4 +36,14 @@ export const en: Translation = {
 	[Key.publishedAt]: "Published at",
 	[Key.license]: "License",
 	[Key.friends]: "Friends",
+
+	[Key.contentValidityFreshLabel]: "Up-to-date content",
+	[Key.contentValidityFreshDescription]:
+		"Published within the last {{freshMonths}} months; details remain accurate.",
+	[Key.contentValidityCautionLabel]: "Check for updates",
+	[Key.contentValidityCautionDescription]:
+		"Published over {{freshMonths}} months ago; some details may have changed.",
+	[Key.contentValidityExpiredLabel]: "Expired content",
+	[Key.contentValidityExpiredDescription]:
+		"Published over {{cautionMonths}} months ago; information could be outdated.",
 };

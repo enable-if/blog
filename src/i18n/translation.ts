@@ -42,7 +42,17 @@ export function getTranslation(lang: string): Translation {
 	return map[lang.toLowerCase()] || defaultTranslation;
 }
 
-export function i18n(key: I18nKey): string {
+export function i18n(
+	key: I18nKey,
+	params?: Record<string, string | number>,
+): string {
 	const lang = siteConfig.lang || "en";
-	return getTranslation(lang)[key];
+	const template = getTranslation(lang)[key];
+	if (!params) {
+		return template;
+	}
+	return template.replace(/{{(\w+)}}/g, (_, token) => {
+		const value = params[token];
+		return value !== undefined ? String(value) : `{{${token}}}`;
+	});
 }

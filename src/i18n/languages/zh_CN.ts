@@ -36,4 +36,14 @@ export const zh_CN: Translation = {
 	[Key.publishedAt]: "发布于",
 	[Key.license]: "许可协议",
 	[Key.friends]: "友链",
+
+	[Key.contentValidityFreshLabel]: "内容有效",
+	[Key.contentValidityFreshDescription]:
+		"发布未满{{freshMonths}}个月，文内信息应仍保持最新。",
+	[Key.contentValidityCautionLabel]: "信息可能有变",
+	[Key.contentValidityCautionDescription]:
+		"发布已超过{{freshMonths}}个月，部分细节可能与现状不同。",
+	[Key.contentValidityExpiredLabel]: "内容可能过期",
+	[Key.contentValidityExpiredDescription]:
+		"发布已超过{{cautionMonths}}个月，信息可能已完全变化。",
 };

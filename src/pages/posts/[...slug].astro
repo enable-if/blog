@@ -9,66 +9,162 @@ import I18nKey from "@i18n/i18nKey";
 import { i18n } from "@i18n/translation";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
 import { getSortedPosts } from "@utils/content-utils";
+import {
+  resolveContentValidityStage,
+  shouldShowContentValidityBanner,
+} from "@utils/content-validity";
 import { formatDateToYYYYMMDD } from "@utils/date-utils";
 import { getDir, getPostUrlBySlug } from "@utils/url-utils";
 import { Icon } from "astro-icon/components";
 import {
-	giscusConfig,
-	licenseConfig,
-	profileConfig,
-	siteConfig,
+  contentValidityConfig,
+  giscusConfig,
+  licenseConfig,
+  profileConfig,
+  siteConfig,
 } from "@/config";
+import type { ContentValidityStage } from "@/types/config";
 
 export async function getStaticPaths() {
-	const blogEntries = await getSortedPosts();
-	return blogEntries.map((entry) => ({
-		params: { slug: entry.slug },
-		props: { entry },
-	}));
+  const blogEntries = await getSortedPosts();
+  return blogEntries.map((entry) => ({
+    params: { slug: entry.slug },
+    props: { entry },
+  }));
 }
 
 const { entry } = Astro.props;
-const { Content, headings } = await entry.render();
-
-const { remarkPluginFrontmatter } = await entry.render();
+const renderedEntry = await entry.render();
+const { Content, headings, remarkPluginFrontmatter } = renderedEntry;
 
 type BlogPostingLd = {
-	"@context": "https://schema.org";
-	"@type": "BlogPosting";
-	headline: string;
-	description: string;
-	keywords: string[];
-	author: {
-		"@type": "Person";
-		name: string;
-		url: string | URL;
-	};
-	datePublished: string;
-	inLanguage: string;
-	image?: string;
+  "@context": "https://schema.org";
+  "@type": "BlogPosting";
+  headline: string;
+  description: string;
+  keywords: string[];
+  author: {
+    "@type": "Person";
+    name: string;
+    url: string | URL;
+  };
+  datePublished: string;
+  inLanguage: string;
+  image?: string;
 };
 
+type ContentValidityCopy = {
+  label: string;
+  description: string;
+};
+
+type ValidityIndicatorPayload = {
+  published: string;
+  thresholds: typeof contentValidityConfig.thresholds;
+  texts: Record<ContentValidityStage, ContentValidityCopy>;
+  styles: typeof contentValidityConfig.banner;
+  mixing: typeof stageMixing;
+};
+
+type ValidityIndicatorData = {
+  texts: Record<ContentValidityStage, ContentValidityCopy>;
+  stage: ContentValidityStage;
+  payload: ValidityIndicatorPayload;
+  style: string;
+};
+
+const stageOrder: ContentValidityStage[] = ["fresh", "caution", "expired"];
+const stageMixing: Record<
+  ContentValidityStage,
+  { theme: number; accent: number }
+> = {
+  fresh: { theme: 70, accent: 30 },
+  caution: { theme: 50, accent: 50 },
+  expired: { theme: 30, accent: 70 },
+};
+
+const composeBannerVars = (stage: ContentValidityStage): string => {
+  const accent = contentValidityConfig.banner[stage].accent;
+  const { theme, accent: accentRatio } = stageMixing[stage];
+  const borderTheme = Math.min(theme + 15, 100);
+  const borderAccent = Math.max(accentRatio - 15, 0);
+  return [
+    `--validity-accent-${stage}:${accent}`,
+    `--validity-bg-${stage}:color-mix(in oklab,var(--primary) ${theme}%, ${accent} ${accentRatio}%)`,
+    `--validity-border-${stage}:color-mix(in oklab,var(--primary) ${borderTheme}%, ${accent} ${borderAccent}%)`,
+    `--validity-text-${stage}:color-mix(in oklab, ${accent} 45%, black)`,
+    `--validity-muted-${stage}:color-mix(in oklab, ${accent} 30%, black)`,
+    `--validity-icon-${stage}:color-mix(in oklab, ${accent} 80%, white)`,
+  ].join("; ");
+};
+
+const validityIndicator: ValidityIndicatorData | null = (() => {
+  if (
+    !shouldShowContentValidityBanner(
+      entry.data.published,
+      contentValidityConfig
+    )
+  ) {
+    return null;
+  }
+  const { freshMonths, cautionMonths } = contentValidityConfig.thresholds;
+  const texts: Record<ContentValidityStage, ContentValidityCopy> = {
+    fresh: {
+      label: i18n(I18nKey.contentValidityFreshLabel),
+      description: i18n(I18nKey.contentValidityFreshDescription, {
+        freshMonths,
+      }),
+    },
+    caution: {
+      label: i18n(I18nKey.contentValidityCautionLabel),
+      description: i18n(I18nKey.contentValidityCautionDescription, {
+        freshMonths,
+      }),
+    },
+    expired: {
+      label: i18n(I18nKey.contentValidityExpiredLabel),
+      description: i18n(I18nKey.contentValidityExpiredDescription, {
+        cautionMonths,
+      }),
+    },
+  };
+  const stage = resolveContentValidityStage(
+    entry.data.published,
+    new Date(),
+    contentValidityConfig
+  );
+  const payload: ValidityIndicatorPayload = {
+    published: entry.data.published.toISOString(),
+    thresholds: contentValidityConfig.thresholds,
+    texts,
+    styles: contentValidityConfig.banner,
+    mixing: stageMixing,
+  };
+  const style = `${stageOrder.map((s) => composeBannerVars(s)).join("; ")};`;
+  return { texts, stage, payload, style };
+})();
+
 const jsonLd: BlogPostingLd = {
-	"@context": "https://schema.org",
-	"@type": "BlogPosting",
-	headline: entry.data.title,
-	description: entry.data.description || entry.data.title,
-	keywords: entry.data.tags,
-	author: {
-		"@type": "Person",
-		name: profileConfig.name,
-		url: Astro.site ?? "",
-	},
-	datePublished: formatDateToYYYYMMDD(entry.data.published),
-	inLanguage: entry.data.lang
-		? entry.data.lang.replace("_", "-")
-		: siteConfig.lang.replace("_", "-"),
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  headline: entry.data.title,
+  description: entry.data.description || entry.data.title,
+  keywords: entry.data.tags,
+  author: {
+    "@type": "Person",
+    name: profileConfig.name,
+    url: Astro.site ?? "",
+  },
+  datePublished: formatDateToYYYYMMDD(entry.data.published),
+  inLanguage: entry.data.lang
+    ? entry.data.lang.replace("_", "-")
+    : siteConfig.lang.replace("_", "-"),
 };
 if (entry.data.image) {
-	const img = entry.data.image.startsWith("http")
-		? entry.data.image
-		: new URL(entry.data.image, Astro.site).toString();
-	jsonLd.image = img;
+  const img = entry.data.image.startsWith("http")
+    ? entry.data.image
+    : new URL(entry.data.image, Astro.site).toString();
+  jsonLd.image = img;
 }
 ---
 
@@ -156,6 +252,140 @@ if (entry.data.image) {
           tags={entry.data.tags}
           category={entry.data.category}
         />
+        {
+          validityIndicator && (
+            <>
+              <div
+                id="content-validity-indicator"
+                class="content-validity-indicator"
+                data-stage={validityIndicator.stage}
+                role="status"
+                aria-live="polite"
+                style={validityIndicator.style}
+              >
+                <div
+                  class="content-validity-indicator__icon"
+                  aria-hidden="true"
+                >
+                  <Icon
+                    data-validity="icon"
+                    name={
+                      contentValidityConfig.banner[validityIndicator.stage].icon
+                    }
+                    class="content-validity-indicator__icon-symbol"
+                  />
+                </div>
+                <div class="content-validity-indicator__body">
+                  <p
+                    data-validity="label"
+                    class="content-validity-indicator__label"
+                  >
+                    {validityIndicator.texts[validityIndicator.stage].label}
+                  </p>
+                  <p
+                    data-validity="description"
+                    class="content-validity-indicator__description"
+                  >
+                    {
+                      validityIndicator.texts[validityIndicator.stage]
+                        .description
+                    }
+                  </p>
+                </div>
+              </div>
+              <script
+                id="content-validity-indicator-config"
+                type="application/json"
+                is:inline
+                set:html={JSON.stringify(validityIndicator.payload)}
+              />
+              <script is:inline>
+                {`(() => {
+  const indicator = document.getElementById("content-validity-indicator");
+  const payloadElement = document.getElementById("content-validity-indicator-config");
+  if (!indicator || !payloadElement) {
+    return;
+  }
+  let payload;
+  try {
+    payload = JSON.parse(payloadElement.textContent || "{}");
+  } catch (err) {
+    return;
+  }
+  const published = new Date(payload.published);
+  if (Number.isNaN(published.getTime())) {
+    return;
+  }
+  const now = new Date();
+  const daysPerMonth = payload.daysPerMonth || 30;
+  const months = (now.getTime() - published.getTime()) / (daysPerMonth * 24 * 60 * 60 * 1000);
+  let stage = "fresh";
+  if (months > payload.thresholds.cautionMonths) {
+    stage = "expired";
+  } else if (months > payload.thresholds.freshMonths) {
+    stage = "caution";
+  }
+  indicator.dataset.stage = stage;
+  const texts = payload.texts?.[stage];
+  const styles = payload.styles?.[stage];
+  const labelEl = indicator.querySelector('[data-validity="label"]');
+  const descriptionEl = indicator.querySelector('[data-validity="description"]');
+  const iconEl = indicator.querySelector('[data-validity="icon"]');
+  if (texts?.label && labelEl) {
+    labelEl.textContent = texts.label;
+  }
+  if (texts?.description && descriptionEl) {
+    descriptionEl.textContent = texts.description;
+  }
+    if (window.AstroIcon && typeof window.AstroIcon.render === "function") {
+      iconEl.innerHTML = window.AstroIcon.render({ name: styles.icon });
+    } else {
+      // Fallback: clear the icon if AstroIcon runtime is not available
+      iconEl.innerHTML = "";
+    }
+    iconEl.setAttribute('name', styles.icon);
+  }
+  const stages = ["fresh","caution","expired"];
+  const stageMix = payload.mixing || {
+    fresh: { theme: 70, accent: 30 },
+    caution: { theme: 50, accent: 50 },
+    expired: { theme: 30, accent: 70 }
+  };
+  stages.forEach((key) => {
+    const stageStyles = payload.styles?.[key];
+    if (!stageStyles?.accent) {
+      return;
+    }
+    const mix = stageMix[key];
+    const borderTheme = Math.min(mix.theme + 15, 100);
+    const borderAccent = Math.max(mix.accent - 15, 0);
+    indicator.style.setProperty("--validity-accent-" + key, stageStyles.accent);
+    indicator.style.setProperty(
+      "--validity-bg-" + key,
+      "color-mix(in oklab, var(--primary) " + mix.theme + "%, " + stageStyles.accent + " " + mix.accent + "%)"
+    );
+    indicator.style.setProperty(
+      "--validity-border-" + key,
+      "color-mix(in oklab, var(--primary) " + borderTheme + "%, " + stageStyles.accent + " " + borderAccent + "%)"
+    );
+    indicator.style.setProperty(
+      "--validity-text-" + key,
+      "color-mix(in oklab, " + stageStyles.accent + " 45%, black)"
+    );
+    indicator.style.setProperty(
+      "--validity-muted-" + key,
+      "color-mix(in oklab, " + stageStyles.accent + " 30%, black)"
+    );
+    indicator.style.setProperty(
+      "--validity-icon-" + key,
+      "color-mix(in oklab, " + stageStyles.accent + " 80%, white)"
+    );
+  });
+})();`}
+              </script>
+            </>
+          )
+        }
         {
           !entry.data.image && (
             <div class="border-[var(--line-divider)] border-dashed border-b-[1px] mb-5" />
@@ -264,3 +494,150 @@ if (entry.data.image) {
     </a>
   </div>
 </MainGridLayout>
+
+<style lang="css">
+  :global(.content-validity-indicator) {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.8rem;
+    padding: 0.65rem 0.95rem;
+    border-radius: calc(var(--radius-large) * 0.85);
+    border: 1px solid var(--validity-border-fresh, rgba(0, 0, 0, 0.08));
+    background: color-mix(
+      in oklab,
+      var(--validity-bg-fresh, var(--card-bg)) 82%,
+      var(--page-bg) 18%
+    );
+    color: var(
+      --validity-text-fresh,
+      color-mix(in oklab, var(--primary) 45%, black)
+    );
+    margin-bottom: 0.9rem;
+  }
+
+  :global(.content-validity-indicator[data-stage="fresh"]) {
+    background: color-mix(
+      in oklab,
+      var(--validity-bg-fresh, var(--card-bg)) 88%,
+      var(--page-bg) 12%
+    );
+    border-color: var(
+      --validity-border-fresh,
+      color-mix(in oklab, var(--primary) 70%, rgba(0, 0, 0, 0.18))
+    );
+    color: var(
+      --validity-text-fresh,
+      color-mix(in oklab, var(--primary) 42%, black)
+    );
+  }
+
+  :global(.content-validity-indicator[data-stage="caution"]) {
+    background: color-mix(
+      in oklab,
+      var(--validity-bg-caution, var(--card-bg)) 85%,
+      var(--page-bg) 15%
+    );
+    border-color: var(
+      --validity-border-caution,
+      color-mix(in oklab, rgba(255, 140, 0, 1) 65%, black 35%)
+    );
+    color: var(
+      --validity-text-caution,
+      color-mix(in oklab, rgba(255, 140, 0, 1) 50%, black)
+    );
+  }
+
+  :global(.content-validity-indicator[data-stage="expired"]) {
+    background: color-mix(
+      in oklab,
+      var(--validity-bg-expired, var(--card-bg)) 83%,
+      var(--page-bg) 17%
+    );
+    border-color: var(
+      --validity-border-expired,
+      color-mix(in oklab, rgba(220, 20, 60, 1) 65%, black 35%)
+    );
+    color: var(
+      --validity-text-expired,
+      color-mix(in oklab, rgba(220, 20, 60, 1) 55%, black)
+    );
+  }
+
+  :global(.content-validity-indicator__icon) {
+    width: 2.65rem;
+    height: 2.65rem;
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: color-mix(
+      in oklab,
+      var(--validity-icon-fresh, var(--primary)) 45%,
+      var(--page-bg) 55%
+    );
+    border: 1px solid currentColor;
+    color: var(--validity-icon-fresh, var(--primary));
+    flex-shrink: 0;
+  }
+
+  :global(
+      .content-validity-indicator[data-stage="caution"]
+        .content-validity-indicator__icon
+    ) {
+    color: var(--validity-icon-caution, rgba(255, 140, 0, 1));
+    background: color-mix(
+      in oklab,
+      var(--validity-icon-caution, rgba(255, 140, 0, 1)) 40%,
+      var(--page-bg) 60%
+    );
+  }
+
+  :global(
+      .content-validity-indicator[data-stage="expired"]
+        .content-validity-indicator__icon
+    ) {
+    color: var(--validity-icon-expired, rgba(220, 20, 60, 1));
+    background: color-mix(
+      in oklab,
+      var(--validity-icon-expired, rgba(220, 20, 60, 1)) 40%,
+      var(--page-bg) 60%
+    );
+  }
+
+  :global(.content-validity-indicator__icon-symbol) {
+    font-size: 1.4rem;
+  }
+
+  :global(.content-validity-indicator__body) {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  :global(.content-validity-indicator__label) {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  :global(.content-validity-indicator__description) {
+    margin: 0;
+    font-size: 0.82rem;
+    color: var(--validity-muted-fresh, inherit);
+    opacity: 0.85;
+  }
+
+  :global(
+      .content-validity-indicator[data-stage="caution"]
+        .content-validity-indicator__description
+    ) {
+    color: var(--validity-muted-caution, inherit);
+  }
+
+  :global(
+      .content-validity-indicator[data-stage="expired"]
+        .content-validity-indicator__description
+    ) {
+    color: var(--validity-muted-expired, inherit);
+  }
+</style>

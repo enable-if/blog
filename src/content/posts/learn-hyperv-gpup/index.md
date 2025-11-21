@@ -1,6 +1,6 @@
 ---
 title: 教程向：如何配置Hyper-V GPU 分区 (GPU-P)
-published: 2025-10-05
+published: 2025-08-05
 description: "在 Windows 11 Pro 主机上，使用 Hyper-V 的 GPU 分区 (GPU-P) 功能，将 NVIDIA GeForce RTX 4070 Laptop 显卡的部分资源分配给 Windows 11 虚拟机使用。"
 image: ""
 tags: ["Windows", "Hyper-V"]

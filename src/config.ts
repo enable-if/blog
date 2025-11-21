@@ -1,4 +1,5 @@
 import type {
+	ContentValidityConfig,
 	ExpressiveCodeConfig,
 	GiscusConfig,
 	LicenseConfig,
@@ -137,4 +138,26 @@ export const giscusConfig: GiscusConfig = {
 	themeDark: "/giscus/theme-dark.css",
 	lang: "zh-CN",
 	loading: "lazy",
+};
+
+export const contentValidityConfig: ContentValidityConfig = {
+	enable: true,
+	thresholds: {
+		freshMonths: 6,
+		cautionMonths: 12,
+	},
+	banner: {
+		fresh: {
+			icon: "material-symbols:verified-rounded",
+			accent: "#00ffa2ff",
+		},
+		caution: {
+			icon: "material-symbols:info-rounded",
+			accent: "#ff9100ff",
+		},
+		expired: {
+			icon: "material-symbols:warning-rounded",
+			accent: "#ff0019ff",
+		},
+	},
 };

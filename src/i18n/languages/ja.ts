@@ -36,4 +36,14 @@ export const ja: Translation = {
 	[Key.publishedAt]: "公開日",
 	[Key.license]: "ライセンス",
 	[Key.friends]: "フレンズ",
+
+	[Key.contentValidityFreshLabel]: "最新の内容",
+	[Key.contentValidityFreshDescription]:
+		"{{freshMonths}}か月以内に公開されたため、記載内容はほぼ正確です。",
+	[Key.contentValidityCautionLabel]: "情報更新に注意",
+	[Key.contentValidityCautionDescription]:
+		"{{freshMonths}}か月以上前に公開されました。内容が変わっている可能性があります。",
+	[Key.contentValidityExpiredLabel]: "内容が古くなっています",
+	[Key.contentValidityExpiredDescription]:
+		"{{cautionMonths}}か月以上前に公開されたため、情報が大きく変わっているかもしれません。",
 };

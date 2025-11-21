@@ -36,4 +36,14 @@ export const vi: Translation = {
 	[Key.publishedAt]: "Đăng vào lúc",
 	[Key.license]: "Giấy phép bản quyền",
 	[Key.friends]: "Bạn bè",
+
+	[Key.contentValidityFreshLabel]: "Nội dung mới",
+	[Key.contentValidityFreshDescription]:
+		"Đăng trong {{freshMonths}} tháng gần đây; thông tin vẫn chính xác.",
+	[Key.contentValidityCautionLabel]: "Kiểm tra cập nhật",
+	[Key.contentValidityCautionDescription]:
+		"Đăng cách đây hơn {{freshMonths}} tháng; một số chi tiết có thể đã thay đổi.",
+	[Key.contentValidityExpiredLabel]: "Nội dung đã lỗi thời",
+	[Key.contentValidityExpiredDescription]:
+		"Đăng cách đây hơn {{cautionMonths}} tháng; thông tin có thể không còn đúng.",
 };
