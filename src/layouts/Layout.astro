@@ -5,6 +5,8 @@ import "@fontsource/roboto/700.css";
 
 import ConfigCarrier from "@components/ConfigCarrier.astro";
 import { profileConfig, siteConfig } from "@/config";
+import I18nKey from "@/i18n/i18nKey";
+import { i18n } from "@/i18n/translation";
 import {
   AUTO_MODE,
   BANNER_HEIGHT,
@@ -60,6 +62,31 @@ if (title) {
 const favicons: Favicon[] =
   siteConfig.favicon.length > 0 ? siteConfig.favicon : defaultFavicons;
 
+const parseFaviconScore = (sizes?: string) => {
+  if (!sizes) return 0;
+  const [w, h] = sizes.split("x").map((value) => Number.parseInt(value, 10));
+  if (!Number.isFinite(w)) return 0;
+  if (!Number.isFinite(h)) return w * w;
+  return w * h;
+};
+
+const selectLargestFavicon = (icons: Favicon[]) => {
+  return icons
+    .map((icon) => ({ icon, score: parseFaviconScore(icon.sizes) }))
+    .sort((a, b) => b.score - a.score)[0]?.icon;
+};
+
+const loaderFaviconNeutral =
+  selectLargestFavicon(favicons.filter((icon) => !icon.theme)) ||
+  selectLargestFavicon(favicons) ||
+  favicons[0];
+const loaderFaviconLight = selectLargestFavicon(
+  favicons.filter((icon) => icon.theme === "light")
+);
+const loaderFaviconDark = selectLargestFavicon(
+  favicons.filter((icon) => icon.theme === "dark")
+);
+
 // const siteLang = siteConfig.lang.replace('_', '-')
 if (!lang) {
   lang = `${siteConfig.lang}`;
@@ -80,6 +107,7 @@ const bannerOffset =
   lang={siteLang}
   class="bg-[var(--page-bg)] transition text-[14px] md:text-[16px]"
   data-overlayscrollbars-initialize
+  data-cold-start="true"
 >
   <head>
     <title>{pageTitle}</title>
@@ -168,6 +196,16 @@ const bannerOffset =
         "page-width": `${PAGE_WIDTH}rem`,
       }}
     ></style>
+    <script is:inline>
+      try {
+        if (sessionStorage.getItem("appWarm")) {
+          document.documentElement.dataset.coldStart = "false";
+          document.documentElement.classList.add("cold-start-complete");
+        }
+      } catch (error) {
+        document.documentElement.dataset.coldStart = "true";
+      }
+    </script>
     <!-- defines global css variables. This will be applied to <html> <body> and some other elements idk why -->
 
     <slot name="head" />
@@ -209,6 +247,52 @@ const bannerOffset =
     data-overlayscrollbars-initialize
   >
     <ConfigCarrier />
+    <div
+      id="cold-start-loader"
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+    >
+      <div class="loader-panel">
+        <div class="loader-header">
+          <div class="loader-symbol" aria-hidden="true">
+            <picture>
+              {
+                loaderFaviconDark && (
+                  <source
+                    srcset={loaderFaviconDark.src}
+                    media="(prefers-color-scheme: dark)"
+                  />
+                )
+              }
+              {
+                loaderFaviconLight && (
+                  <source
+                    srcset={loaderFaviconLight.src}
+                    media="(prefers-color-scheme: light)"
+                  />
+                )
+              }
+              <img
+                src={loaderFaviconNeutral?.src}
+                alt=""
+                width="52"
+                height="52"
+                loading="eager"
+                decoding="async"
+              />
+            </picture>
+          </div>
+          <div class="loader-meta">
+            <p class="loader-label">{siteConfig.title}</p>
+            <p class="loader-status">{i18n(I18nKey.initialLoading)}</p>
+          </div>
+        </div>
+        <div class="loader-progress" data-progress>
+          <span class="loader-bar"></span>
+        </div>
+      </div>
+    </div>
     <slot />
 
     <!-- increase the page height during page transition to prevent the scrolling animation from jumping -->
@@ -251,6 +335,153 @@ const bannerOffset =
     .navbar-hidden {
       @apply opacity-0 -translate-y-16;
     }
+  }
+
+  #cold-start-loader {
+    --loader-primary: hsl(var(--hue, 210) 65% 52%);
+    --loader-on-primary: #ffffff;
+    --loader-track: color-mix(in srgb, var(--loader-primary) 18%, transparent);
+    --loader-surface: color-mix(
+      in srgb,
+      var(--page-bg, #ffffff) 96%,
+      #000000 4%
+    );
+    --loader-outline: color-mix(
+      in srgb,
+      var(--loader-primary) 32%,
+      transparent
+    );
+    --loader-text: color-mix(in srgb, #111111 75%, var(--loader-primary) 25%);
+    --loader-subtext: color-mix(in srgb, var(--loader-text) 60%, transparent);
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    z-index: 9999;
+    background: color-mix(in srgb, var(--page-bg, #fff) 92%, #000 8%);
+    backdrop-filter: blur(4px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 200ms ease;
+  }
+
+  html[data-cold-start="true"] #cold-start-loader {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  #cold-start-loader.cold-start-loader--done {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  #cold-start-loader .loader-panel {
+    width: min(380px, calc(100% - 2.25rem));
+    margin: 0 auto;
+    padding: 1.5rem;
+    border-radius: 0.85rem;
+    background: var(--loader-surface);
+    border: 1px solid var(--loader-outline);
+    box-shadow: 0 18px 45px rgb(0 0 0 / 0.12);
+    color: var(--loader-text);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  html.dark #cold-start-loader {
+    --loader-surface: color-mix(
+      in srgb,
+      #101418 88%,
+      var(--loader-primary) 12%
+    );
+    --loader-outline: color-mix(
+      in srgb,
+      var(--loader-primary) 45%,
+      #000000 35%
+    );
+    --loader-text: color-mix(in srgb, #f5f5f5 85%, var(--loader-primary) 15%);
+    --loader-subtext: color-mix(in srgb, var(--loader-text) 70%, transparent);
+  }
+
+  html.dark #cold-start-loader .loader-panel {
+    box-shadow: 0 26px 60px rgb(0 0 0 / 0.5);
+  }
+
+  #cold-start-loader .loader-header {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  #cold-start-loader .loader-symbol {
+    width: 68px;
+    height: 68px;
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #cold-start-loader .loader-symbol picture,
+  #cold-start-loader .loader-symbol img {
+    display: block;
+    width: 60px;
+    height: 60px;
+    border-radius: 0.65rem;
+  }
+
+  #cold-start-loader .loader-symbol img {
+    object-fit: contain;
+    background: none;
+    padding: 0;
+  }
+
+  #cold-start-loader .loader-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  #cold-start-loader .loader-label {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--loader-text);
+  }
+
+  #cold-start-loader .loader-status {
+    margin: 0;
+    font-size: 0.95rem;
+    color: var(--loader-subtext);
+  }
+
+  #cold-start-loader .loader-progress {
+    --cold-progress: 8%;
+    position: relative;
+    width: 100%;
+    height: 0.6rem;
+    border-radius: 999px;
+    background: var(--loader-track);
+    overflow: hidden;
+  }
+
+  #cold-start-loader .loader-bar {
+    position: absolute;
+    inset: 0;
+    width: var(--cold-progress);
+    border-radius: inherit;
+    background-image: linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--loader-primary), #ffffff 12%),
+      color-mix(in srgb, var(--loader-primary), #000000 10%)
+    );
+    transition: width 320ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 </style>
 
@@ -322,6 +553,85 @@ function disableAnimation() {
 */
 
   const bannerEnabled = !!document.getElementById("banner-wrapper");
+
+  // Show a cold-start progress overlay once per browser tab session.
+  function setupColdStartLoader() {
+    const html = document.documentElement;
+    const loader = document.getElementById("cold-start-loader");
+    if (!loader || html.dataset.coldStart !== "true") {
+      return;
+    }
+
+    const progressTrack = loader.querySelector(
+      "[data-progress]"
+    ) as HTMLElement | null;
+    let progressValue = 12;
+
+    const setProgress = (value: number) => {
+      progressValue = value;
+      if (progressTrack) {
+        progressTrack.style.setProperty("--cold-progress", `${value}%`);
+      }
+    };
+
+    setProgress(progressValue);
+
+    const advance = () => {
+      const remaining = 92 - progressValue;
+      const easedStep = Math.max(1.5, remaining * 0.18);
+      const jitter = Math.random() * 1.5;
+      setProgress(Math.min(progressValue + easedStep + jitter, 92));
+    };
+
+    advance();
+    const timer = window.setInterval(advance, 320);
+
+    const finalize = () => {
+      clearInterval(timer);
+      if (progressTrack) {
+        progressTrack.style.setProperty("--cold-progress", "100%");
+      }
+      loader.classList.add("cold-start-loader--done");
+      html.dataset.coldStart = "false";
+      html.classList.add("cold-start-complete");
+      try {
+        sessionStorage.setItem("appWarm", "1");
+      } catch (error) {
+        /* no-op */
+      }
+      window.setTimeout(() => loader.remove(), 320);
+    };
+
+    const debugHold =
+      window.location.search.includes("debugColdLoader=true") ||
+      window.location.hash.includes("debug-cold-loader");
+
+    if (debugHold) {
+      clearInterval(timer);
+      setProgress(64);
+      html.dataset.coldStart = "true";
+      loader.setAttribute("data-debug", "true");
+      try {
+        sessionStorage.removeItem("appWarm");
+      } catch (error) {
+        /* no-op */
+      }
+      (
+        window as typeof window & {
+          __resumeColdLoader?: () => void;
+        }
+      ).__resumeColdLoader = finalize;
+      return;
+    }
+
+    if (document.readyState === "complete") {
+      finalize();
+    } else {
+      window.addEventListener("load", finalize, { once: true });
+    }
+  }
+
+  setupColdStartLoader();
 
   function setClickOutsideToClose(
     panel: string,

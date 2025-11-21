@@ -7,7 +7,7 @@ tags: ["Windows", "Hyper-V"]
 category: "与Windows的爱恨情仇"
 draft: false
 lang: "zh_CN"
-validityCheck: false
+validityCheck: true
 ---
 
 在部分场景下，我们需要在虚拟机内使用 GPU 来进行硬件加速。
