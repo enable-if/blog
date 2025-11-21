@@ -99,6 +99,9 @@ const composeBannerVars = (stage: ContentValidityStage): string => {
 };
 
 const validityIndicator: ValidityIndicatorData | null = (() => {
+  if (entry.data.validityCheck === false) {
+    return null;
+  }
   if (
     !shouldShowContentValidityBanner(
       entry.data.published,
