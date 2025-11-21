@@ -323,7 +323,11 @@ function disableAnimation() {
 
   const bannerEnabled = !!document.getElementById("banner-wrapper");
 
-  function setClickOutsideToClose(panel: string, ignores: string[]) {
+  function setClickOutsideToClose(
+    panel: string,
+    ignores: string[],
+    toggles: string[] = []
+  ) {
     document.addEventListener("click", (event) => {
       let panelDom = document.getElementById(panel);
       let tDom = event.target;
@@ -334,17 +338,20 @@ function disableAnimation() {
           return;
         }
       }
-      panelDom!.classList.add("float-panel-closed");
+      if (panelDom) {
+        panelDom.classList.add("float-panel-closed");
+      }
+      for (const toggleId of toggles) {
+        const toggle = document.getElementById(toggleId);
+        toggle?.setAttribute("aria-expanded", "false");
+      }
     });
   }
-  setClickOutsideToClose("display-setting", [
+  setClickOutsideToClose(
     "display-setting",
-    "display-settings-switch",
-  ]);
-  setClickOutsideToClose("nav-menu-panel", [
-    "nav-menu-panel",
-    "nav-menu-switch",
-  ]);
+    ["display-setting", "display-settings-switch"],
+    ["display-settings-switch"]
+  );
   setClickOutsideToClose("search-panel", [
     "search-panel",
     "search-bar",
