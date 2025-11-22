@@ -868,14 +868,18 @@ function disableAnimation() {
     // disableAnimation()()		// TODO
     loadTheme();
     loadHue();
-    // Defer heavy scrollbar initialization to an idle slot or a short timeout
+    showBanner();
+
+    // Defer scrollbar initialization until after Svelte components hydrate
+    // This prevents conflicts with Svelte component initialization
     if ("requestIdleCallback" in window) {
       // @ts-ignore
-      window.requestIdleCallback(() => initCustomScrollbar(), { timeout: 800 });
+      window.requestIdleCallback(() => initCustomScrollbar(), {
+        timeout: 2000,
+      });
     } else {
-      setTimeout(initCustomScrollbar, 200);
+      setTimeout(initCustomScrollbar, 500);
     }
-    showBanner();
   }
 
   /* Load settings when entering the site */
@@ -895,76 +899,102 @@ function disableAnimation() {
 	})
 */
     window.swup.hooks.on("link:click", () => {
-      // Remove the delay for the first time page load
       document.documentElement.style.setProperty("--content-delay", "0ms");
 
-      // prevent elements from overlapping the navbar
-      if (!bannerEnabled) {
-        return;
-      }
-      let threshold = window.innerHeight * (BANNER_HEIGHT / 100) - 72 - 16;
-      let navbar = document.getElementById("navbar-wrapper");
-      if (!navbar || !document.body.classList.contains("lg:is-home")) {
-        return;
-      }
-      if (
-        document.body.scrollTop >= threshold ||
-        document.documentElement.scrollTop >= threshold
-      ) {
-        navbar.classList.add("navbar-hidden");
-      }
-    });
-    window.swup.hooks.on("content:replace", () => {
-      // Re-evaluate scrollbars lazily after DOM replacement
-      if ("requestIdleCallback" in window) {
-        // @ts-ignore
-        window.requestIdleCallback(() => initCustomScrollbar(), {
-          timeout: 800,
-        });
-      } else {
-        setTimeout(initCustomScrollbar, 200);
+      // Prevent navbar overlap on home page with banner
+      if (!bannerEnabled) return;
+
+      const threshold = window.innerHeight * (BANNER_HEIGHT / 100) - 72 - 16;
+      const navbar = document.getElementById("navbar-wrapper");
+      const isHomePage = document.body.classList.contains("lg:is-home");
+
+      if (navbar && isHomePage) {
+        const currentScroll =
+          window.scrollY || document.documentElement.scrollTop || 0;
+        if (currentScroll >= threshold) {
+          navbar.classList.add("navbar-hidden");
+        }
       }
     });
+
+    // Hook: animation:out:start - Triggered when fade-out animation begins
+    window.swup.hooks.on("animation:out:start", () => {
+      // Smooth scroll to top during fade-out for seamless transition
+      window.scrollTo({ top: 0, behavior: "smooth" });
+
+      // Reset navbar state to prevent it from being stuck hidden
+      // This fixes same-page navigation (e.g., clicking home while on home)
+      const navbar = document.getElementById("navbar-wrapper");
+      if (navbar) {
+        navbar.classList.remove("navbar-hidden");
+        navbarIsHidden = false;
+      }
+    });
+
+    // Hook: visit:start - Triggered when navigation begins
     window.swup.hooks.on("visit:start", (visit: { to: { url: string } }) => {
-      // change banner height immediately when a link is clicked
       const bodyElement = document.querySelector("body");
-      if (pathsEqual(visit.to.url, url("/"))) {
-        bodyElement!.classList.add("lg:is-home");
+      const isGoingToHome = pathsEqual(visit.to.url, url("/"));
+
+      // Update body class for banner height adjustment
+      bodyElement?.classList.toggle("lg:is-home", isGoingToHome);
+
+      // Recalculate cached values based on new layout
+      updateCachedValues();
+
+      // Show height extension element to prevent scroll jump during transition
+      const heightExtend = document.getElementById("page-height-extend");
+      heightExtend?.classList.remove("hidden");
+
+      // Hide TOC during scroll animation
+      const toc = document.getElementById("toc-wrapper");
+      toc?.classList.add("toc-not-ready");
+    });
+
+    // Hook: content:replace - Triggered after DOM content is replaced
+    window.swup.hooks.on("content:replace", () => {
+      // Defer scrollbar initialization to avoid conflicts with Svelte component hydration
+      const initScrollbars = () => initCustomScrollbar();
+
+      if ("requestIdleCallback" in window) {
+        // @ts-ignore - Wait for idle time with 2s timeout
+        window.requestIdleCallback(initScrollbars, { timeout: 2000 });
       } else {
-        bodyElement!.classList.remove("lg:is-home");
-      }
-
-      // increase the page height during page transition to prevent the scrolling animation from jumping
-      const heightExtend = document.getElementById("page-height-extend");
-      if (heightExtend) {
-        heightExtend.classList.remove("hidden");
-      }
-
-      // Hide the TOC while scrolling back to top
-      let toc = document.getElementById("toc-wrapper");
-      if (toc) {
-        toc.classList.add("toc-not-ready");
+        setTimeout(initScrollbars, 500);
       }
     });
+
+    // Hook: page:view - Triggered when new page is visible
     window.swup.hooks.on("page:view", () => {
-      // hide the temp high element when the transition is done
+      // Hide height extension element
       const heightExtend = document.getElementById("page-height-extend");
-      if (heightExtend) {
-        heightExtend.classList.add("hidden");
+      heightExtend?.classList.add("hidden");
+
+      // Ensure navbar is visible on new page (backup safety)
+      const navbar = document.getElementById("navbar-wrapper");
+      if (navbar) {
+        navbar.classList.remove("navbar-hidden");
+        navbarIsHidden = false;
+      }
+
+      // Update scroll tracking for the new page
+      lastScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+      if (!scrollScheduled) {
+        scrollScheduled = true;
+        requestAnimationFrame(processScroll);
       }
     });
-    window.swup.hooks.on("visit:end", (_visit: { to: { url: string } }) => {
-      setTimeout(() => {
-        const heightExtend = document.getElementById("page-height-extend");
-        if (heightExtend) {
-          heightExtend.classList.add("hidden");
-        }
 
-        // Just make the transition looks better
+    // Hook: visit:end - Triggered when navigation is complete
+    window.swup.hooks.on("visit:end", () => {
+      setTimeout(() => {
+        // Final cleanup: ensure height extension is hidden
+        const heightExtend = document.getElementById("page-height-extend");
+        heightExtend?.classList.add("hidden");
+
+        // Show TOC after transition completes
         const toc = document.getElementById("toc-wrapper");
-        if (toc) {
-          toc.classList.remove("toc-not-ready");
-        }
+        toc?.classList.remove("toc-not-ready");
       }, 200);
     });
   };
@@ -974,96 +1004,132 @@ function disableAnimation() {
     document.addEventListener("swup:enable", setup);
   }
 
+  const NAVBAR_HEIGHT_PX = 72;
+  const REM_TO_PX = 16;
+  const LARGE_SCREEN_BREAKPOINT = 1024;
+
+  // DOM element references (cached for performance)
   let backToTopBtn = document.getElementById("back-to-top-btn");
   let toc = document.getElementById("toc-wrapper");
   let navbar = document.getElementById("navbar-wrapper");
-  // rAF-throttled scroll processing to minimize layout thrash
+
+  // Scroll state tracking
   let scrollScheduled = false;
   let lastScrollY = 0;
-  // Track last applied states to avoid redundant classList writes
+
+  // Component visibility state (prevents redundant DOM updates)
   let backToTopVisible = false;
   let tocVisible = false;
   let navbarIsHidden = false;
+
+  // Cached computed values (avoid repeated calculations)
+  let cachedBannerHeightPx = 0;
+  let cachedNavbarThreshold = 0;
+  let cachedViewportWidth = window.innerWidth;
+
+  function updateCachedValues() {
+    cachedBannerHeightPx = window.innerHeight * (BANNER_HEIGHT / 100);
+
+    const mainPanelOverlap = MAIN_PANEL_OVERLAPS_BANNER_HEIGHT * REM_TO_PX;
+    const isHomePage = document.body.classList.contains("lg:is-home");
+    const isLargeScreen = cachedViewportWidth >= LARGE_SCREEN_BREAKPOINT;
+
+    const bannerHeight =
+      isHomePage && isLargeScreen ? BANNER_HEIGHT_HOME : BANNER_HEIGHT;
+
+    cachedNavbarThreshold =
+      window.innerHeight * (bannerHeight / 100) -
+      NAVBAR_HEIGHT_PX -
+      mainPanelOverlap -
+      REM_TO_PX;
+  }
+
+  updateCachedValues();
+
+  /**
+   * Process scroll events with optimized DOM batching
+   * Read Phase: Gather all scroll position data
+   * Calculate Phase: Determine visibility states
+   * Write Phase: Apply all DOM changes together
+   * This pattern minimizes forced reflows and improves performance
+   */
   function processScroll() {
     scrollScheduled = false;
     const scrollY = lastScrollY;
-    // Distance threshold for floating buttons and TOC visibility
-    const bannerHeightPx = window.innerHeight * (BANNER_HEIGHT / 100);
 
-    // Batch writes after reads
-    if (backToTopBtn) {
-      const nextVisible = scrollY > bannerHeightPx;
-      if (nextVisible !== backToTopVisible) {
-        backToTopVisible = nextVisible;
-        backToTopBtn.classList.toggle("hide", !nextVisible);
-      }
+    // ========== READ PHASE: Check DOM element availability ==========
+    const hasBackToTop = !!backToTopBtn;
+    const hasToc = bannerEnabled && !!toc;
+    const hasNavbar = bannerEnabled && !!navbar;
+
+    const shouldShowBackToTop = hasBackToTop && scrollY > cachedBannerHeightPx;
+    const shouldShowToc = hasToc && scrollY > cachedBannerHeightPx;
+    const shouldHideNavbar = hasNavbar && scrollY >= cachedNavbarThreshold;
+
+    if (hasBackToTop && shouldShowBackToTop !== backToTopVisible) {
+      backToTopVisible = shouldShowBackToTop;
+      backToTopBtn!.classList.toggle("hide", !shouldShowBackToTop);
     }
 
-    if (bannerEnabled && toc) {
-      const nextTocVisible = scrollY > bannerHeightPx;
-      if (nextTocVisible !== tocVisible) {
-        tocVisible = nextTocVisible;
-        toc.classList.toggle("toc-hide", !nextTocVisible);
-      }
+    if (hasToc && shouldShowToc !== tocVisible) {
+      tocVisible = shouldShowToc;
+      toc!.classList.toggle("toc-hide", !shouldShowToc);
     }
 
-    if (!bannerEnabled || !navbar) return;
-
-    const NAVBAR_HEIGHT = 72;
-    const MAIN_PANEL_EXCESS_HEIGHT = MAIN_PANEL_OVERLAPS_BANNER_HEIGHT * 16; // The height the main panel overlaps the banner
-
-    let bannerHeight = BANNER_HEIGHT;
-    if (
-      document.body.classList.contains("lg:is-home") &&
-      window.innerWidth >= 1024
-    ) {
-      bannerHeight = BANNER_HEIGHT_HOME;
-    }
-    const threshold =
-      window.innerHeight * (bannerHeight / 100) -
-      NAVBAR_HEIGHT -
-      MAIN_PANEL_EXCESS_HEIGHT -
-      16;
-
-    const nextHidden = scrollY >= threshold;
-    if (nextHidden !== navbarIsHidden) {
-      navbarIsHidden = nextHidden;
-      navbar.classList.toggle("navbar-hidden", nextHidden);
+    if (hasNavbar && shouldHideNavbar !== navbarIsHidden) {
+      navbarIsHidden = shouldHideNavbar;
+      navbar!.classList.toggle("navbar-hidden", shouldHideNavbar);
     }
   }
+
   function onScroll() {
+    // Cache current scroll position (cross-browser compatible)
     lastScrollY =
       window.scrollY ||
       document.documentElement.scrollTop ||
       document.body.scrollTop ||
       0;
+
+    // Throttle: only schedule one update per frame
     if (!scrollScheduled) {
       scrollScheduled = true;
       requestAnimationFrame(processScroll);
     }
   }
+
   window.addEventListener("scroll", onScroll, { passive: true });
 
-  // rAF-throttled resize handler (computes a CSS var used by layout)
   let resizeScheduled = false;
+
   function processResize() {
     resizeScheduled = false;
-    // calculate the --banner-height-extend, which needs to be a multiple of 4 to avoid blurry text
+    cachedViewportWidth = window.innerWidth;
+
+    // Calculate banner-height-extend (must be multiple of 4 to avoid blurry text)
     let offset = Math.floor(window.innerHeight * (BANNER_HEIGHT_EXTEND / 100));
     offset = offset - (offset % 4);
     document.documentElement.style.setProperty(
       "--banner-height-extend",
       `${offset}px`
     );
-    // also re-run scroll computations to reflect new viewport
+
+    // Recalculate all cached layout values
+    updateCachedValues();
+
+    // Trigger scroll recalculation for new viewport
     onScroll();
   }
+
+  /**
+   * Throttled resize event handler using requestAnimationFrame
+   */
   function onResize() {
     if (!resizeScheduled) {
       resizeScheduled = true;
       requestAnimationFrame(processResize);
     }
   }
+
   window.addEventListener("resize", onResize, { passive: true });
 </script>
 

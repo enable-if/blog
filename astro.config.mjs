@@ -40,7 +40,7 @@ export default defineConfig({
 			// when the Tailwind class `transition-all` is used
 			// Use precise containers to avoid mismatches during replacement
 			containers: ["#swup-container", "#toc"],
-			smoothScrolling: true,
+			smoothScrolling: false,
 			cache: true,
 			preload: true,
 			accessibility: true,
