@@ -52,12 +52,9 @@ if (
 
 const enableBanner = siteConfig.banner.enable;
 
-let pageTitle: string;
-if (title) {
-  pageTitle = `${title} - ${siteConfig.title}`;
-} else {
-  pageTitle = `${siteConfig.title} - ${siteConfig.subtitle}`;
-}
+const pageTitle = title
+  ? `${title} - ${siteConfig.title}`
+  : `${siteConfig.title} - ${siteConfig.subtitle}`;
 
 const favicons: Favicon[] =
   siteConfig.favicon.length > 0 ? siteConfig.favicon : defaultFavicons;
@@ -213,8 +210,18 @@ const bannerOffset =
           if (navEntry && "type" in navEntry) {
             return navEntry.type === "reload";
           }
-          const legacy = performance?.navigation;
-          return legacy?.type === legacy?.TYPE_RELOAD || legacy?.type === 1;
+
+          const legacyNavKey = ["navigation"];
+          const legacyTypeKey = ["type"];
+          const legacyReloadKey = ["TYPE_RELOAD"];
+
+          const legacyNav = globalThis?.["performance"]?.[legacyNavKey[0]];
+          if (!legacyNav) {
+            return false;
+          }
+          const legacyType = legacyNav?.[legacyTypeKey[0]];
+          const legacyReloadConstant = legacyNav?.[legacyReloadKey[0]];
+          return legacyType === legacyReloadConstant || legacyType === 1;
         })();
 
         const shouldSkipLoader = hasSessionWarm && !isReloadNavigation;

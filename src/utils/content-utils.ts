@@ -59,8 +59,7 @@ export async function getTagList(): Promise<Tag[]> {
 	const countMap: { [key: string]: number } = {};
 	allBlogPosts.forEach((post: { data: { tags: string[] } }) => {
 		post.data.tags.forEach((tag: string) => {
-			if (!countMap[tag]) countMap[tag] = 0;
-			countMap[tag]++;
+			countMap[tag] = (countMap[tag] || 0) + 1;
 		});
 	});
 
@@ -90,12 +89,8 @@ export async function getCategoryList(): Promise<Category[]> {
 			return;
 		}
 
-		const categoryName =
-			typeof post.data.category === "string"
-				? post.data.category.trim()
-				: String(post.data.category).trim();
-
-		count[categoryName] = count[categoryName] ? count[categoryName] + 1 : 1;
+		const categoryName = String(post.data.category).trim();
+		count[categoryName] = (count[categoryName] || 0) + 1;
 	});
 
 	const lst = Object.keys(count).sort((a, b) => {

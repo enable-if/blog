@@ -16,6 +16,7 @@ const links = Astro.props.links;
 <div
   id="nav-menu-overlay"
   aria-hidden="true"
+  inert
   class="fixed inset-0 bg-black/50 backdrop-blur-sm md:hidden"
 >
 </div>
@@ -23,6 +24,7 @@ const links = Astro.props.links;
 <div
   id="nav-menu-panel"
   aria-hidden="true"
+  inert
   class="fixed top-0 left-0 h-full bg-[var(--card-bg)] shadow-2xl border-l border-[var(--line-divider)] overflow-y-auto overflow-x-hidden md:hidden"
 >
   <div class="flex flex-col h-full">
@@ -69,7 +71,8 @@ const links = Astro.props.links;
 <div
   id="nav-menu-popover"
   aria-hidden="true"
-  class="hidden md:block lg:hidden fixed top-[5.25rem] right-4 w-[22rem] max-w-[calc(100vw_-_2rem)] rounded-2xl border border-[var(--line-divider)] bg-[var(--card-bg)] shadow-2xl overflow-y-auto"
+  inert
+  class="hidden md:block lg:hidden fixed top-[5.25rem] right-4 w-[22rem] max-w-[calc(100vw_-_2rem)] max-h-[calc(100vh_-_6rem)] rounded-2xl border border-[var(--line-divider)] bg-[var(--card-bg)] shadow-2xl overflow-y-auto scrollbar-hide"
 >
   <div class="p-4 flex flex-col gap-4">
     <Profile />
@@ -88,163 +91,260 @@ const links = Astro.props.links;
       openNavMenu?: () => void;
       closeNavMenu?: () => void;
       __navMenuPending?: NavMenuAction | null;
+      __navMenuController?: NavMenuController;
+      __navMenuSwupAttached?: boolean;
     }
   }
 
-  window.__navMenuPending ??= null;
+  class NavMenuController {
+    private overlayEl: HTMLElement;
+    private panelEl: HTMLElement;
+    private popoverEl: HTMLElement;
+    private triggerEl: HTMLElement | null;
+    private abortController: AbortController;
+    private mode: ViewportMode;
+    private activeSurface: Surface | null = null;
 
-  function setupNavMenu() {
-    const overlayEl = document.getElementById(
-      "nav-menu-overlay"
-    ) as HTMLElement | null;
-    const panelEl = document.getElementById(
-      "nav-menu-panel"
-    ) as HTMLElement | null;
-    const popoverEl = document.getElementById(
-      "nav-menu-popover"
-    ) as HTMLElement | null;
-    const triggerEl = document.getElementById(
-      "nav-menu-switch"
-    ) as HTMLElement | null;
-    if (!overlayEl || !panelEl || !popoverEl) return;
+    private readonly BREAKPOINT_MD = 768;
+    private readonly BREAKPOINT_LG = 1024;
 
-    const BREAKPOINT_MD = 768;
-    const BREAKPOINT_LG = 1024;
+    constructor() {
+      const overlay = document.getElementById("nav-menu-overlay");
+      const panel = document.getElementById("nav-menu-panel");
+      const popover = document.getElementById("nav-menu-popover");
 
-    const getViewportMode = (): ViewportMode => {
-      const width = window.innerWidth;
-      if (width < BREAKPOINT_MD) return "mobile";
-      if (width < BREAKPOINT_LG) return "medium";
-      return "desktop";
-    };
-
-    let mode: ViewportMode = getViewportMode();
-    let activeSurface: Surface | null = null;
-
-    const setTriggerState = () => {
-      triggerEl?.setAttribute("aria-expanded", (!!activeSurface).toString());
-    };
-
-    const setVisibility = (element: HTMLElement, visible: boolean) => {
-      element.classList.toggle("is-visible", visible);
-      element.setAttribute("aria-hidden", visible ? "false" : "true");
-    };
-
-    const openSurface = (target: Surface) => {
-      if (activeSurface === target) return;
-      if (target === "sidebar") {
-        setVisibility(popoverEl, false);
-        setVisibility(overlayEl, true);
-        setVisibility(panelEl, true);
-        document.body.style.overflow = "hidden";
-      } else {
-        setVisibility(overlayEl, false);
-        setVisibility(panelEl, false);
-        setVisibility(popoverEl, true);
-        document.body.style.overflow = "";
+      if (!overlay || !panel || !popover) {
+        throw new Error("Required nav menu elements not found");
       }
-      activeSurface = target;
-      setTriggerState();
-    };
 
-    const closeSurface = (target: Surface) => {
-      if (target === "sidebar") {
-        setVisibility(overlayEl, false);
-        setVisibility(panelEl, false);
-        document.body.style.overflow = "";
-      } else {
-        setVisibility(popoverEl, false);
-      }
-      if (activeSurface === target) {
-        activeSurface = null;
-        setTriggerState();
-      }
-    };
+      this.overlayEl = overlay as HTMLElement;
+      this.panelEl = panel as HTMLElement;
+      this.popoverEl = popover as HTMLElement;
+      this.triggerEl = document.getElementById("nav-menu-switch");
+      this.abortController = new AbortController();
+      this.mode = this.getViewportMode();
 
-    const closeAll = () => {
-      closeSurface("sidebar");
-      closeSurface("popover");
-    };
-
-    const runAction = (action: NavMenuAction) => {
-      if (action === "open") {
-        if (mode === "mobile") {
-          openSurface("sidebar");
-        } else if (mode === "medium") {
-          openSurface("popover");
-        }
-        return;
-      }
-      closeAll();
-    };
-
-    window.openNavMenu = () => runAction("open");
-    window.closeNavMenu = () => runAction("close");
-
-    if (window.__navMenuPending) {
-      const pending = window.__navMenuPending;
-      window.__navMenuPending = null;
-      runAction(pending);
+      this.init();
     }
 
-    overlayEl.addEventListener("click", (event: MouseEvent) => {
-      if (event.target === overlayEl) closeSurface("sidebar");
-    });
+    private getViewportMode(): ViewportMode {
+      const width = window.innerWidth;
+      if (width < this.BREAKPOINT_MD) return "mobile";
+      if (width < this.BREAKPOINT_LG) return "medium";
+      return "desktop";
+    }
 
-    document.addEventListener("keydown", (event: KeyboardEvent) => {
-      if (event.key === "Escape") closeAll();
-    });
-
-    panelEl
-      .querySelectorAll<HTMLAnchorElement>("a[href]")
-      .forEach((link) =>
-        link.addEventListener("click", () =>
-          setTimeout(() => closeSurface("sidebar"), 150)
-        )
+    private setTriggerState(): void {
+      this.triggerEl?.setAttribute(
+        "aria-expanded",
+        String(!!this.activeSurface)
       );
+    }
 
-    popoverEl
-      .querySelectorAll<HTMLAnchorElement>("a[href]")
-      .forEach((link) =>
-        link.addEventListener("click", () =>
-          setTimeout(() => closeSurface("popover"), 150)
-        )
-      );
+    private setVisibility(element: HTMLElement, visible: boolean): void {
+      element.classList.toggle("is-visible", visible);
+      element.setAttribute("aria-hidden", String(!visible));
 
-    document.addEventListener("click", (event) => {
-      if (mode !== "medium" || activeSurface !== "popover") return;
-      const target = event.target as Node;
-      if (popoverEl.contains(target)) return;
-      if (triggerEl && triggerEl.contains(target)) return;
-      closeSurface("popover");
-    });
-
-    window.addEventListener(
-      "scroll",
-      () => {
-        if (mode === "medium" && activeSurface === "popover") {
-          closeSurface("popover");
-        }
-      },
-      { passive: true }
-    );
-
-    const handleViewportChange = () => {
-      const nextMode = getViewportMode();
-      if (nextMode === mode) return;
-      mode = nextMode;
-      if (mode === "mobile") {
-        closeSurface("popover");
-      } else if (mode === "medium") {
-        closeSurface("sidebar");
+      if (visible) {
+        element.removeAttribute("inert");
       } else {
-        closeAll();
+        const active = document.activeElement as HTMLElement;
+        if (active && element.contains(active)) {
+          active.blur();
+          this.triggerEl?.focus();
+        }
+        element.setAttribute("inert", "");
       }
+    }
+
+    private openSurface(target: Surface): void {
+      if (this.activeSurface === target) return;
+
+      if (target === "sidebar") {
+        this.setVisibility(this.popoverEl, false);
+        this.setVisibility(this.overlayEl, true);
+        this.setVisibility(this.panelEl, true);
+        document.body.style.overflow = "hidden";
+      } else {
+        this.setVisibility(this.overlayEl, false);
+        this.setVisibility(this.panelEl, false);
+        this.setVisibility(this.popoverEl, true);
+        document.body.style.overflow = "";
+      }
+
+      this.activeSurface = target;
+      this.setTriggerState();
+    }
+
+    private closeSurface(target: Surface, force = false): void {
+      const shouldReset = force || this.activeSurface === target;
+      const targetEl = target === "sidebar" ? this.panelEl : this.popoverEl;
+
+      const active = document.activeElement as HTMLElement;
+      if (active && targetEl.contains(active)) {
+        active.blur();
+      }
+
+      if (target === "sidebar") {
+        this.setVisibility(this.overlayEl, false);
+        this.setVisibility(this.panelEl, false);
+        document.body.style.overflow = "";
+      } else {
+        this.setVisibility(this.popoverEl, false);
+      }
+
+      if (shouldReset) {
+        this.activeSurface = null;
+        this.setTriggerState();
+      }
+    }
+
+    public closeAll(): void {
+      this.closeSurface("sidebar", true);
+      this.closeSurface("popover", true);
+    }
+
+    private runAction(action: NavMenuAction): void {
+      if (action === "open") {
+        if (this.mode === "mobile") {
+          this.openSurface("sidebar");
+        } else if (this.mode === "medium") {
+          this.openSurface("popover");
+        }
+      } else {
+        this.closeAll();
+      }
+    }
+
+    private init(): void {
+      const signal = this.abortController.signal;
+
+      window.openNavMenu = () => this.runAction("open");
+      window.closeNavMenu = () => this.runAction("close");
+
+      if (window.__navMenuPending) {
+        const pending = window.__navMenuPending;
+        window.__navMenuPending = null;
+        this.runAction(pending);
+      }
+
+      this.overlayEl.addEventListener(
+        "click",
+        (e) => e.target === this.overlayEl && this.closeSurface("sidebar"),
+        { signal }
+      );
+
+      document.addEventListener(
+        "keydown",
+        (e) => e.key === "Escape" && this.closeAll(),
+        { signal }
+      );
+
+      document.addEventListener(
+        "click",
+        (e) => {
+          if (this.mode !== "medium" || this.activeSurface !== "popover")
+            return;
+          const target = e.target as Node;
+          if (this.popoverEl.contains(target)) return;
+          if (this.triggerEl?.contains(target)) return;
+          this.closeSurface("popover");
+        },
+        { signal }
+      );
+
+      window.addEventListener(
+        "scroll",
+        () => {
+          if (this.mode === "medium" && this.activeSurface === "popover") {
+            this.closeSurface("popover");
+          }
+        },
+        { passive: true, signal } as AddEventListenerOptions
+      );
+
+      window.addEventListener(
+        "resize",
+        () => {
+          const nextMode = this.getViewportMode();
+          if (nextMode === this.mode) return;
+          this.mode = nextMode;
+
+          if (this.mode === "desktop") {
+            this.closeAll();
+          } else if (this.mode === "medium") {
+            this.closeSurface("sidebar");
+          } else {
+            this.closeSurface("popover");
+          }
+        },
+        { signal }
+      );
+
+      const handleLinkClick = (surface: Surface) => (e: Event) => {
+        const link = (e.target as HTMLElement).closest<HTMLAnchorElement>(
+          "a[href]"
+        );
+        if (link) {
+          link.blur();
+          setTimeout(() => this.closeSurface(surface), 150);
+        }
+      };
+
+      this.panelEl.addEventListener("click", handleLinkClick("sidebar"), {
+        signal,
+      });
+      this.popoverEl.addEventListener("click", handleLinkClick("popover"), {
+        signal,
+      });
+
+      this.closeAll();
+    }
+
+    public destroy(): void {
+      this.abortController.abort();
+      this.closeAll();
+      delete window.__navMenuController;
+    }
+  }
+
+  function setupNavMenu() {
+    window.__navMenuController?.destroy();
+
+    try {
+      window.__navMenuController = new NavMenuController();
+    } catch (error) {
+      console.error("Failed to initialize nav menu:", error);
+      window.__navMenuPending ??= null;
+      window.openNavMenu ??= () => {
+        window.__navMenuPending = "open";
+      };
+      window.closeNavMenu ??= () => {
+        window.__navMenuPending = "close";
+      };
+      return;
+    }
+
+    if (!window.__navMenuController || window.__navMenuSwupAttached) return;
+    window.__navMenuSwupAttached = true;
+
+    const attachSwupHooks = () => {
+      if (!window?.swup?.hooks) return;
+
+      window.swup.hooks.on("visit:start", () => {
+        window.__navMenuController?.closeAll();
+      });
+
+      window.swup.hooks.on("content:replace", () => {
+        queueMicrotask(() => setupNavMenu());
+      });
     };
 
-    window.addEventListener("resize", handleViewportChange);
-
-    closeAll();
+    if (window?.swup?.hooks) {
+      attachSwupHooks();
+    } else {
+      document.addEventListener("swup:enable", attachSwupHooks, { once: true });
+    }
   }
 
   if (document.readyState === "loading") {
@@ -311,6 +411,13 @@ const links = Astro.props.links;
     transform: translate(0, 0);
   }
   #nav-menu-content::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
   #nav-menu-popover {

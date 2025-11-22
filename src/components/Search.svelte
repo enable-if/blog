@@ -134,8 +134,8 @@ $: if (initialized) {
 		clearTimeout(searchTimer);
 	}
 	searchTimer = window.setTimeout(() => {
-		void search(currentDesktop, true);
-		void search(currentMobile, false);
+		search(currentDesktop, true);
+		search(currentMobile, false);
 	}, DEBOUNCE_MS);
 }
 </script>

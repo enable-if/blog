@@ -30,10 +30,7 @@ export function getHue(): number {
  */
 export function setHue(hue: number): void {
 	localStorage.setItem("hue", String(hue));
-	const r = document.documentElement as HTMLElement;
-	if (r) {
-		r.style.setProperty("--hue", String(hue));
-	}
+	document.documentElement.style.setProperty("--hue", String(hue));
 }
 
 /**

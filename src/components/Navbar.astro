@@ -18,31 +18,80 @@ let links: NavBarLink[] = navBarConfig.links.map(
 		return item;
 	},
 );
+
+const primaryLinks = links.slice(0, 2);
+const moreLinks = links.slice(2);
 ---
+
+{moreLinks.length > 0 && (
+    <div
+        id="more-links-dropdown"
+        aria-hidden="true"
+        class="hidden md:block lg:hidden fixed py-2 w-auto rounded-xl border border-[var(--line-divider)] bg-[var(--card-bg)] shadow-2xl z-[9999]"
+    >
+        {moreLinks.map((l) => {
+            return <a 
+                href={l.external ? l.url : url(l.url)} 
+                target={l.external ? "_blank" : null}
+                class="flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-[var(--btn-plain-bg-hover)] transition whitespace-nowrap more-link text-black/75 dark:text-white/75 hover:text-[var(--primary)] dark:hover:text-[var(--primary)] font-medium"
+            >
+                <span>{l.name}</span>
+                {l.external && <Icon name="fa6-solid:arrow-up-right-from-square" class="text-[0.75rem] text-black/[0.2] dark:text-white/[0.2]"></Icon>}
+            </a>;
+        })}
+    </div>
+)}
+
 <div id="navbar" class="z-50 onload-animation">
     <div class="absolute h-8 left-0 right-0 -top-8 bg-[var(--card-bg)] transition"></div> <!-- used for onload animation -->
     <div class:list={[
         className,
-        "card-base !overflow-visible max-w-[var(--page-width)] h-[4.5rem] !rounded-t-none mx-auto flex items-center justify-between px-4"]}>
-        <a href={url('/')} class="btn-plain scale-animation rounded-lg h-[3.25rem] px-5 font-bold active:scale-95">
-            <div class="flex flex-row text-[var(--primary)] items-center text-md">
+        "card-base overflow-hidden max-w-[var(--page-width)] h-[4.5rem] !rounded-t-none mx-auto flex items-center px-4 gap-2"]}>
+        <a href={url('/')} class="btn-plain scale-animation rounded-lg h-[3.25rem] px-5 font-bold active:scale-95 flex-shrink-0">
+            <div class="flex flex-row text-[var(--primary)] items-center text-md whitespace-nowrap">
                 <Icon name="material-symbols:home-outline-rounded" class="text-[1.75rem] mb-1 mr-2" />
                 {siteConfig.title}
             </div>
         </a>
-        <div class="hidden md:flex">
+        <div class="hidden md:flex lg:hidden gap-1 flex-shrink-0">
+            {primaryLinks.map((l) => {
+                return <a aria-label={l.name} href={l.external ? l.url : url(l.url)} target={l.external ? "_blank" : null}
+                          class="btn-plain scale-animation rounded-lg h-11 font-bold px-3 active:scale-95"
+                >
+                    <div class="flex items-center whitespace-nowrap">
+                        {l.name}
+                        {l.external && <Icon name="fa6-solid:arrow-up-right-from-square" class="text-[0.875rem] transition -translate-y-[1px] ml-1 text-black/[0.2] dark:text-white/[0.2]"></Icon>}
+                    </div>
+                </a>;
+            })}
+            {moreLinks.length > 0 && (
+                <button
+                    aria-label="More"
+                    class="btn-plain scale-animation rounded-lg h-11 px-3 font-bold active:scale-95"
+                    id="more-links-switch"
+                    aria-haspopup="true"
+                    aria-expanded="false"
+                >
+                    <div class="flex items-center gap-1">
+                        更多
+                        <Icon name="material-symbols:arrow-drop-down-rounded" class="text-[1.5rem]" />
+                    </div>
+                </button>
+            )}
+        </div>
+        <div class="hidden lg:flex gap-1 flex-1 min-w-0 justify-center overflow-x-auto scrollbar-hide">
             {links.map((l) => {
                 return <a aria-label={l.name} href={l.external ? l.url : url(l.url)} target={l.external ? "_blank" : null}
-                          class="btn-plain scale-animation rounded-lg h-11 font-bold px-5 active:scale-95"
+                          class="btn-plain scale-animation rounded-lg h-11 font-bold px-3 lg:px-5 active:scale-95 flex-shrink-0"
                 >
-                    <div class="flex items-center">
+                    <div class="flex items-center whitespace-nowrap">
                         {l.name}
                         {l.external && <Icon name="fa6-solid:arrow-up-right-from-square" class="text-[0.875rem] transition -translate-y-[1px] ml-1 text-black/[0.2] dark:text-white/[0.2]"></Icon>}
                     </div>
                 </a>;
             })}
         </div>
-        <div class="flex">
+        <div class="flex flex-shrink-0 gap-1 ml-auto">
             <!--<SearchPanel client:load>-->
             <Search client:only="svelte"></Search>
             {!siteConfig.themeColor.fixed && (
@@ -75,60 +124,164 @@ let links: NavBarLink[] = navBarConfig.links.map(
     </div>
 </div>
 
+<style>
+    .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+    }
+    #more-links-dropdown {
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-8px);
+        transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
+    }
+    #more-links-dropdown.is-visible {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+    }
+</style>
+
 <script>
 declare global {
     interface Window {
         openNavMenu?: () => void;
         closeNavMenu?: () => void;
         __navMenuPending?: "open" | "close" | null;
+        __navbarSwupAttached?: boolean;
     }
 }
 
-function setToggle(triggerId: string, panelId: string) {
+const DROPDOWN_OFFSET = 8;
+const DEBOUNCE_DELAY = 16;
+
+function debounce<T extends (...args: any[]) => void>(fn: T, delay: number): (...args: Parameters<T>) => void {
+    let timeoutId: number | undefined;
+    return (...args: Parameters<T>) => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => fn(...args), delay) as unknown as number;
+    };
+}
+
+function setToggle(triggerId: string, panelId: string): void {
     const trigger = document.getElementById(triggerId);
-    if (!trigger) return;
+    const panel = document.getElementById(panelId);
+    if (!trigger || !panel) return;
+    
     trigger.addEventListener("click", () => {
-        const panel = document.getElementById(panelId);
-        if (!panel) return;
-        panel.classList.toggle("float-panel-closed");
-        const expanded = trigger.getAttribute("aria-expanded") === "true";
-        trigger.setAttribute("aria-expanded", (!expanded).toString());
+        const isOpen = !panel.classList.contains("float-panel-closed");
+        panel.classList.toggle("float-panel-closed", isOpen);
+        trigger.setAttribute("aria-expanded", (!isOpen).toString());
     });
 }
 
-function ensureNavMenuStubs() {
-    if (window.openNavMenu && window.closeNavMenu) {
-        return;
-    }
-    window.openNavMenu = () => {
-        window.__navMenuPending = "open";
+function setupMoreLinksDropdown(): void {
+    const trigger = document.getElementById("more-links-switch");
+    const dropdown = document.getElementById("more-links-dropdown");
+    if (!trigger || !dropdown) return;
+
+    let rafId: number | null = null;
+
+    const updatePosition = () => {
+        if (rafId) cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(() => {
+            const rect = trigger.getBoundingClientRect();
+            dropdown.style.top = `${rect.bottom + DROPDOWN_OFFSET}px`;
+            dropdown.style.left = `${rect.left}px`;
+            rafId = null;
+        });
     };
-    window.closeNavMenu = () => {
-        window.__navMenuPending = "close";
+
+    const close = () => {
+        dropdown.classList.remove("is-visible");
+        dropdown.classList.add("hidden");
+        dropdown.setAttribute("aria-hidden", "true");
+        trigger.setAttribute("aria-expanded", "false");
     };
-    window.__navMenuPending ??= null;
+
+    const open = () => {
+        updatePosition();
+        dropdown.classList.add("is-visible");
+        dropdown.classList.remove("hidden");
+        dropdown.setAttribute("aria-hidden", "false");
+        trigger.setAttribute("aria-expanded", "true");
+    };
+
+    trigger.addEventListener("click", (e) => {
+        e.stopPropagation();
+        dropdown.classList.contains("is-visible") ? close() : open();
+    });
+
+    const handleOutsideClick = (e: Event) => {
+        if (dropdown.classList.contains("is-visible") && 
+            !dropdown.contains(e.target as Node) && 
+            !trigger.contains(e.target as Node)) {
+            close();
+        }
+    };
+    document.addEventListener("click", handleOutsideClick);
+
+    dropdown.addEventListener("click", (e) => {
+        if ((e.target as HTMLElement).closest(".more-link")) {
+            close();
+        }
+    });
+
+    const debouncedUpdate = debounce(() => {
+        if (dropdown.classList.contains("is-visible")) {
+            updatePosition();
+        }
+    }, DEBOUNCE_DELAY);
+
+    window.addEventListener("resize", debouncedUpdate);
+    window.addEventListener("scroll", debouncedUpdate, { passive: true });
 }
 
-function initNavToggles() {
+function ensureNavMenuStubs(): void {
+    window.__navMenuPending ??= null;
+    window.openNavMenu ??= () => { window.__navMenuPending = "open"; };
+    window.closeNavMenu ??= () => { window.__navMenuPending = "close"; };
+}
+
+function initNavToggles(): void {
     setToggle("display-settings-switch", "display-setting");
+    setupMoreLinksDropdown();
+    
     const navToggle = document.getElementById("nav-menu-switch");
-    if (navToggle) {
-        ensureNavMenuStubs();
-        navToggle.addEventListener("click", () => {
-            const expanded = navToggle.getAttribute("aria-expanded") === "true";
-            if (expanded) {
-                window.closeNavMenu?.();
-            } else {
-                window.openNavMenu?.();
-            }
-        });
-    }
+    if (!navToggle) return;
+    
+    ensureNavMenuStubs();
+    
+    const handleNavToggleClick = () => {
+        const expanded = navToggle.getAttribute("aria-expanded") === "true";
+        expanded ? window.closeNavMenu?.() : window.openNavMenu?.();
+    };
+    
+    navToggle.addEventListener("click", handleNavToggleClick);
 }
 
 if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", initNavToggles);
 } else {
     initNavToggles();
+}
+
+function attachSwupHandler(): void {
+    if (!window.__navbarSwupAttached && window?.swup?.hooks) {
+        window.__navbarSwupAttached = true;
+        window.swup.hooks.on("content:replace", () => {
+            queueMicrotask(initNavToggles);
+        });
+    }
+}
+
+if (window?.swup) {
+    attachSwupHandler();
+} else {
+    document.addEventListener("swup:enable", attachSwupHandler, { once: true });
 }
 </script>
 
