@@ -168,14 +168,16 @@ function debounce<T extends (...args: any[]) => void>(fn: T, delay: number): (..
 
 function setToggle(triggerId: string, panelId: string): void {
     const trigger = document.getElementById(triggerId);
-    const panel = document.getElementById(panelId);
-    if (!trigger || !panel) return;
+    if (!trigger) return;
     
     trigger.addEventListener("click", () => {
-        const isOpen = !panel.classList.contains("float-panel-closed");
-        panel.classList.toggle("float-panel-closed", isOpen);
-        trigger.setAttribute("aria-expanded", (!isOpen).toString());
-    });
+        const panel = document.getElementById(panelId);
+        if (!panel) return;
+        
+        const isClosed = panel.classList.contains("float-panel-closed");
+        panel.classList.toggle("float-panel-closed");
+        trigger.setAttribute("aria-expanded", isClosed.toString());
+    }, { once: false });
 }
 
 function setupMoreLinksDropdown(): void {
@@ -196,7 +198,7 @@ function setupMoreLinksDropdown(): void {
     };
 
     const close = () => {
-        dropdown.classList.remove("is-visible");
+        dropdown.classList.remove("is-visible", "hidden");
         dropdown.classList.add("hidden");
         dropdown.setAttribute("aria-hidden", "true");
         trigger.setAttribute("aria-expanded", "false");
@@ -204,8 +206,8 @@ function setupMoreLinksDropdown(): void {
 
     const open = () => {
         updatePosition();
-        dropdown.classList.add("is-visible");
         dropdown.classList.remove("hidden");
+        dropdown.classList.add("is-visible");
         dropdown.setAttribute("aria-hidden", "false");
         trigger.setAttribute("aria-expanded", "true");
     };
@@ -216,19 +218,15 @@ function setupMoreLinksDropdown(): void {
     });
 
     const handleOutsideClick = (e: Event) => {
-        if (dropdown.classList.contains("is-visible") && 
-            !dropdown.contains(e.target as Node) && 
-            !trigger.contains(e.target as Node)) {
+        if (!dropdown.classList.contains("is-visible")) return;
+        const target = e.target as Node;
+        if (!dropdown.contains(target) && !trigger.contains(target)) {
+            close();
+        } else if ((target as HTMLElement).closest?.(".more-link")) {
             close();
         }
     };
     document.addEventListener("click", handleOutsideClick);
-
-    dropdown.addEventListener("click", (e) => {
-        if ((e.target as HTMLElement).closest(".more-link")) {
-            close();
-        }
-    });
 
     const debouncedUpdate = debounce(() => {
         if (dropdown.classList.contains("is-visible")) {
@@ -255,12 +253,10 @@ function initNavToggles(): void {
     
     ensureNavMenuStubs();
     
-    const handleNavToggleClick = () => {
+    navToggle.addEventListener("click", () => {
         const expanded = navToggle.getAttribute("aria-expanded") === "true";
-        expanded ? window.closeNavMenu?.() : window.openNavMenu?.();
-    };
-    
-    navToggle.addEventListener("click", handleNavToggleClick);
+        (expanded ? window.closeNavMenu : window.openNavMenu)?.();
+    });
 }
 
 if (document.readyState === "loading") {

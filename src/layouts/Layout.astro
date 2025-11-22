@@ -741,22 +741,25 @@ function disableAnimation() {
     toggles: string[] = []
   ) {
     document.addEventListener("click", (event) => {
-      let panelDom = document.getElementById(panel);
-      let tDom = event.target;
-      if (!(tDom instanceof Node)) return; // Ensure the event target is an HTML Node
-      for (let ig of ignores) {
-        let ie = document.getElementById(ig);
-        if (ie == tDom || ie?.contains(tDom)) {
-          return;
-        }
-      }
-      if (panelDom) {
-        panelDom.classList.add("float-panel-closed");
-      }
-      for (const toggleId of toggles) {
-        const toggle = document.getElementById(toggleId);
-        toggle?.setAttribute("aria-expanded", "false");
-      }
+      const target = event.target;
+      if (!(target instanceof Node)) return;
+
+      // Check if click is inside ignored elements
+      if (
+        ignores.some((id) => {
+          const el = document.getElementById(id);
+          return el === target || el?.contains(target);
+        })
+      )
+        return;
+
+      // Close panel and update toggles
+      const panelDom = document.getElementById(panel);
+      panelDom?.classList.add("float-panel-closed");
+
+      toggles.forEach((id) => {
+        document.getElementById(id)?.setAttribute("aria-expanded", "false");
+      });
     });
   }
   setClickOutsideToClose(

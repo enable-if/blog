@@ -26,45 +26,39 @@ function resetHue() {
 }
 
 // rAF-throttled preview updater (no localStorage writes during drag)
-let raf = 0 as number | 0;
+let raf = 0;
 let pendingHue = hue;
+
 function previewHue(next: number) {
 	pendingHue = next;
 	if (raf) return;
+
 	raf = requestAnimationFrame(() => {
-		// Only preview within the panel to avoid full-page reflow while dragging
-		if (panelEl) {
-			const h = String(pendingHue);
-			panelEl.style.setProperty("--hue", h);
-			// Also override commonly used derived vars for immediate visible feedback
-			const isDark = document.documentElement.classList.contains("dark");
-			panelEl.style.setProperty(
-				"--primary",
-				isDark ? `oklch(0.75 0.14 ${h})` : `oklch(0.70 0.14 ${h})`,
-			);
-			panelEl.style.setProperty(
-				"--btn-content",
-				isDark ? `oklch(0.75 0.1 ${h})` : `oklch(0.55 0.12 ${h})`,
-			);
-			panelEl.style.setProperty(
-				"--btn-regular-bg",
-				isDark ? `oklch(0.33 0.035 ${h})` : `oklch(0.95 0.025 ${h})`,
-			);
-			panelEl.style.setProperty(
-				"--btn-regular-bg-hover",
-				isDark ? `oklch(0.38 0.04 ${h})` : `oklch(0.9 0.05 ${h})`,
-			);
-			panelEl.style.setProperty(
-				"--btn-regular-bg-active",
-				isDark ? `oklch(0.43 0.045 ${h})` : `oklch(0.85 0.08 ${h})`,
-			);
-			// Float panel bg varies with hue only in dark mode; override anyway for consistency
-			panelEl.style.setProperty(
-				"--float-panel-bg",
-				isDark ? `oklch(0.19 0.015 ${h})` : "white",
-			);
-		}
 		raf = 0;
+		if (!panelEl) return;
+
+		// Only preview within the panel to avoid full-page reflow while dragging
+		const h = String(pendingHue);
+		const isDark = document.documentElement.classList.contains("dark");
+
+		// Batch style updates
+		Object.assign(panelEl.style, {
+			"--hue": h,
+			"--primary": isDark ? `oklch(0.75 0.14 ${h})` : `oklch(0.70 0.14 ${h})`,
+			"--btn-content": isDark
+				? `oklch(0.75 0.1 ${h})`
+				: `oklch(0.55 0.12 ${h})`,
+			"--btn-regular-bg": isDark
+				? `oklch(0.33 0.035 ${h})`
+				: `oklch(0.95 0.025 ${h})`,
+			"--btn-regular-bg-hover": isDark
+				? `oklch(0.38 0.04 ${h})`
+				: `oklch(0.9 0.05 ${h})`,
+			"--btn-regular-bg-active": isDark
+				? `oklch(0.43 0.045 ${h})`
+				: `oklch(0.85 0.08 ${h})`,
+			"--float-panel-bg": isDark ? `oklch(0.19 0.015 ${h})` : "white",
+		});
 	});
 }
 
@@ -78,20 +72,27 @@ function onSliderChange(e: Event) {
 	const v = Number((e.currentTarget as HTMLInputElement).value);
 	// Persist selection once user finishes interaction
 	setHue(v);
-	// Remove local override so panel inherits the new global hue
+
+	// Remove local overrides so panel inherits the new global hue
 	if (panelEl) {
-		panelEl.style.removeProperty("--hue");
-		panelEl.style.removeProperty("--primary");
-		panelEl.style.removeProperty("--btn-content");
-		panelEl.style.removeProperty("--btn-regular-bg");
-		panelEl.style.removeProperty("--btn-regular-bg-hover");
-		panelEl.style.removeProperty("--btn-regular-bg-active");
-		panelEl.style.removeProperty("--float-panel-bg");
+		const props = [
+			"--hue",
+			"--primary",
+			"--btn-content",
+			"--btn-regular-bg",
+			"--btn-regular-bg-hover",
+			"--btn-regular-bg-active",
+			"--float-panel-bg",
+		];
+		for (const prop of props) {
+			panelEl.style.removeProperty(prop);
+		}
 	}
+
 	// Add a short-lived global color transition for smoother apply
 	const root = document.documentElement;
 	root.classList.add("hue-transition");
-	window.setTimeout(() => root.classList.remove("hue-transition"), 300);
+	setTimeout(() => root.classList.remove("hue-transition"), 300);
 }
 </script>
 
