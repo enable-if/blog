@@ -487,7 +487,7 @@ const bannerOffset =
   }
 
   #cold-start-loader .loader-progress {
-    --cold-progress: 8%;
+    --cold-progress: 0%;
     position: relative;
     width: 100%;
     height: 0.6rem;
@@ -506,7 +506,8 @@ const bannerOffset =
       color-mix(in srgb, var(--loader-primary), #ffffff 12%),
       color-mix(in srgb, var(--loader-primary), #000000 10%)
     );
-    transition: width 320ms cubic-bezier(0.16, 1, 0.3, 1);
+    transition: width 250ms cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: width;
   }
 </style>
 
@@ -590,7 +591,7 @@ function disableAnimation() {
     const progressTrack = loader.querySelector(
       "[data-progress]"
     ) as HTMLElement | null;
-    let progressValue = 12;
+    let progressValue = 0;
     const setProgress = (value: number) => {
       progressValue = value;
       if (progressTrack) {
@@ -598,26 +599,94 @@ function disableAnimation() {
       }
     };
 
-    setProgress(progressValue);
+    let totalResources = 0;
+    let loadedResources = 0;
+    let domLoadProgress = 0;
+    let fallbackTimer: number | undefined;
 
-    const advance = () => {
-      const remaining = 92 - progressValue;
-      const easedStep = Math.max(1.5, remaining * 0.18);
-      const jitter = Math.random() * 1.5;
-      setProgress(Math.min(progressValue + easedStep + jitter, 92));
+    const countResources = () => {
+      const images = document.images.length;
+      const scripts = document.scripts.length;
+      const links = document.querySelectorAll('link[rel="stylesheet"]').length;
+      return Math.max(images + scripts + links, 1);
     };
 
-    let timer: number | undefined;
-    const startProgress = () => {
-      advance();
-      timer = window.setInterval(advance, 320);
+    const updateProgress = () => {
+      const resourceProgress =
+        totalResources > 0 ? (loadedResources / totalResources) * 70 : 0;
+      const totalProgress = Math.min(domLoadProgress + resourceProgress, 98);
+      setProgress(totalProgress);
     };
+
+    const trackResourceLoading = () => {
+      totalResources = countResources();
+
+      Array.from(document.images).forEach((img) => {
+        if (img.complete) {
+          loadedResources++;
+        } else {
+          const onLoad = () => {
+            loadedResources++;
+            updateProgress();
+            img.removeEventListener("load", onLoad);
+            img.removeEventListener("error", onLoad);
+          };
+          img.addEventListener("load", onLoad);
+          img.addEventListener("error", onLoad);
+        }
+      });
+
+      Array.from(document.querySelectorAll('link[rel="stylesheet"]')).forEach(
+        (link) => {
+          const linkEl = link as HTMLLinkElement;
+          if (linkEl.sheet) {
+            loadedResources++;
+          } else {
+            const onLoad = () => {
+              loadedResources++;
+              updateProgress();
+              linkEl.removeEventListener("load", onLoad);
+              linkEl.removeEventListener("error", onLoad);
+            };
+            linkEl.addEventListener("load", onLoad);
+            linkEl.addEventListener("error", onLoad);
+          }
+        }
+      );
+
+      loadedResources += document.scripts.length;
+      updateProgress();
+    };
+
+    if (document.readyState === "loading") {
+      domLoadProgress = 10;
+      setProgress(10);
+
+      document.addEventListener(
+        "DOMContentLoaded",
+        () => {
+          domLoadProgress = 30;
+          trackResourceLoading();
+          updateProgress();
+        },
+        { once: true }
+      );
+    } else if (document.readyState === "interactive") {
+      domLoadProgress = 30;
+      setProgress(30);
+      trackResourceLoading();
+      updateProgress();
+    } else {
+      domLoadProgress = 30;
+      trackResourceLoading();
+      updateProgress();
+    }
 
     const finalize = () => {
-      if (timer !== undefined) {
-        clearInterval(timer);
+      if (fallbackTimer !== undefined) {
+        clearTimeout(fallbackTimer);
       }
-      progressTrack?.style.setProperty("--cold-progress", "100%");
+      setProgress(100);
       loader.classList.add("cold-start-loader--done");
       html.dataset.coldStart = "false";
       html.classList.add("cold-start-complete");
@@ -647,24 +716,22 @@ function disableAnimation() {
           __resumeColdLoader?: () => void;
         }
       ).__resumeColdLoader = () => {
-        startProgress();
         finalize();
       };
       return;
     }
 
     if (document.readyState === "complete") {
-      startProgress();
       finalize();
     } else {
-      window.addEventListener(
-        "load",
-        () => {
-          startProgress();
-          finalize();
-        },
-        { once: true }
-      );
+      window.addEventListener("load", finalize, { once: true });
+
+      fallbackTimer = window.setTimeout(() => {
+        if (progressValue < 98) {
+          console.warn("[Loader] Forcing completion due to timeout");
+        }
+        finalize();
+      }, 8000);
     }
   })();
 
