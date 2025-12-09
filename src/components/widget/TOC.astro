@@ -4,27 +4,27 @@ import { siteConfig } from "../../config";
 import { url } from "../../utils/url-utils";
 
 interface Props {
-	class?: string;
-	headings: MarkdownHeading[];
+  class?: string;
+  headings: MarkdownHeading[];
 }
 
 let { headings = [] } = Astro.props;
 
 let minDepth = 10;
 for (const heading of headings) {
-	minDepth = Math.min(minDepth, heading.depth);
+  minDepth = Math.min(minDepth, heading.depth);
 }
 
 const className = Astro.props.class;
 const isPostsRoute = Astro.url.pathname.startsWith(url("/posts/"));
 
 const removeTailingHash = (text: string) => {
-	let lastIndexOfHash = text.lastIndexOf("#");
-	if (lastIndexOfHash !== text.length - 1) {
-		return text;
-	}
+  let lastIndexOfHash = text.lastIndexOf("#");
+  if (lastIndexOfHash !== text.length - 1) {
+    return text;
+  }
 
-	return text.substring(0, lastIndexOfHash);
+  return text.substring(0, lastIndexOfHash);
 };
 
 let heading1Count = 1;
@@ -40,9 +40,7 @@ const maxLevel = siteConfig.toc.depth;
         .map((heading) => (
           <a
             href={`#${heading.slug}`}
-            class="px-2 flex gap-2 relative transition w-full min-h-9 rounded-xl
-        hover:bg-[var(--toc-btn-hover)] active:bg-[var(--toc-btn-active)] py-2
-    "
+            class="toc-link px-2 flex gap-2 relative transition w-full min-h-9 rounded-xl py-2"
           >
             <div
               class:list={[
@@ -82,13 +80,58 @@ const maxLevel = siteConfig.toc.depth;
         style="opacity: 0"
         class:list={[
           { hidden: headings.length == 0 },
-          "-z-10 absolute bg-[var(--toc-btn-hover)] left-0 right-0 rounded-xl transition-all " +
-            "group-hover:bg-transparent border-2 border-[var(--toc-btn-hover)] group-hover:border-[var(--toc-btn-active)] border-dashed",
+          "-z-10 absolute left-0 right-0 rounded-xl transition-all",
         ]}
       />
     </table-of-contents>
   )
 }
+
+<style>
+  /* TOC link hover - use acrylic instead of solid color */
+  table-of-contents .toc-link:hover {
+    -webkit-backdrop-filter: blur(8px) saturate(120%);
+    backdrop-filter: blur(8px) saturate(120%);
+    background-color: rgba(255, 255, 255, 0.25);
+  }
+  :root.dark table-of-contents .toc-link:hover {
+    background-color: rgba(255, 255, 255, 0.06);
+  }
+  table-of-contents .toc-link:active {
+    background-color: rgba(255, 255, 255, 0.4);
+  }
+  :root.dark table-of-contents .toc-link:active {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+
+  /* Active indicator - acrylic effect without border */
+  #active-indicator {
+    -webkit-backdrop-filter: blur(12px) saturate(150%);
+    backdrop-filter: blur(12px) saturate(150%);
+    background-color: rgba(255, 255, 255, 0.35);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  }
+  :root.dark #active-indicator {
+    background-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+  /* When hovering on TOC, indicator becomes transparent to show item hover instead */
+  table-of-contents:hover #active-indicator {
+    background-color: transparent;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: none;
+  }
+
+  /* Active TOC item - text color */
+  table-of-contents a.visible > div:last-child {
+    color: var(--primary);
+  }
+  /* Sub-heading dots only - use more specific selector to avoid affecting parent container */
+  table-of-contents a.visible > div:first-child > div {
+    background-color: var(--primary) !important;
+  }
+</style>
 
 <script>
   class TableOfContents extends HTMLElement {

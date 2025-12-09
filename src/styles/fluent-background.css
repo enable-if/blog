@@ -1,0 +1,218 @@
+:root {
+  --fluent-primary-grad: radial-gradient(
+      50% 50% at 50% 50%,
+      oklch(0.65 0.18 var(--hue) / 0.3) 0,
+      oklch(0.65 0.18 var(--hue) / 0) 50%
+    ),
+    radial-gradient(
+      50% 50% at 50% 50%,
+      oklch(0.65 0.18 var(--hue) / 0.5) 0,
+      oklch(0.65 0.18 var(--hue) / 0) 75%
+    ),
+    radial-gradient(
+      50% 50% at 50% 50%,
+      oklch(0.65 0.18 var(--hue) / 0.8) 0,
+      oklch(0.65 0.18 var(--hue) / 0) 100%
+    );
+
+  --fluent-secondary-grad: radial-gradient(
+      50% 50% at 50% 50%,
+      oklch(0.7 0.16 calc(var(--hue) + 60) / 0.3) 0,
+      oklch(0.7 0.16 calc(var(--hue) + 60) / 0) 50%
+    ),
+    radial-gradient(
+      50% 50% at 50% 50%,
+      oklch(0.7 0.16 calc(var(--hue) + 60) / 0.5) 0,
+      oklch(0.7 0.16 calc(var(--hue) + 60) / 0) 75%
+    ),
+    radial-gradient(
+      50% 50% at 50% 50%,
+      oklch(0.7 0.16 calc(var(--hue) + 60) / 0.8) 0,
+      oklch(0.7 0.16 calc(var(--hue) + 60) / 0) 100%
+    );
+
+  --fluent-tertiary-grad: radial-gradient(
+      50% 50% at 50% 50%,
+      oklch(0.75 0.14 calc(var(--hue) + 120) / 0.3) 0,
+      oklch(0.75 0.14 calc(var(--hue) + 120) / 0) 50%
+    ),
+    radial-gradient(
+      50% 50% at 50% 50%,
+      oklch(0.75 0.14 calc(var(--hue) + 120) / 0.5) 0,
+      oklch(0.75 0.14 calc(var(--hue) + 120) / 0) 75%
+    ),
+    radial-gradient(
+      50% 50% at 50% 50%,
+      oklch(0.75 0.14 calc(var(--hue) + 120) / 0.8) 0,
+      oklch(0.75 0.14 calc(var(--hue) + 120) / 0) 100%
+    );
+
+  --fluent-quaternary-grad: radial-gradient(
+      50% 50% at 50% 50%,
+      oklch(0.68 0.18 calc(var(--hue) + 180) / 0.3) 0,
+      oklch(0.68 0.18 calc(var(--hue) + 180) / 0) 50%
+    ),
+    radial-gradient(
+      50% 50% at 50% 50%,
+      oklch(0.68 0.18 calc(var(--hue) + 180) / 0.5) 0,
+      oklch(0.68 0.18 calc(var(--hue) + 180) / 0) 75%
+    ),
+    radial-gradient(
+      50% 50% at 50% 50%,
+      oklch(0.68 0.18 calc(var(--hue) + 180) / 0.8) 0,
+      oklch(0.68 0.18 calc(var(--hue) + 180) / 0) 100%
+    );
+
+  --fluent-quinary-grad: radial-gradient(
+      50% 50% at 50% 50%,
+      oklch(0.6 0.2 calc(var(--hue) + 240) / 0.3) 0,
+      oklch(0.6 0.2 calc(var(--hue) + 240) / 0) 50%
+    ),
+    radial-gradient(
+      50% 50% at 50% 50%,
+      oklch(0.6 0.2 calc(var(--hue) + 240) / 0.5) 0,
+      oklch(0.6 0.2 calc(var(--hue) + 240) / 0) 75%
+    ),
+    radial-gradient(
+      50% 50% at 50% 50%,
+      oklch(0.6 0.2 calc(var(--hue) + 240) / 0.8) 0,
+      oklch(0.6 0.2 calc(var(--hue) + 240) / 0) 100%
+    );
+
+  --fluent-senary-grad: radial-gradient(
+      50% 50% at 50% 50%,
+      oklch(0.65 0.22 calc(var(--hue) + 300) / 0.3) 0,
+      oklch(0.65 0.22 calc(var(--hue) + 300) / 0) 50%
+    ),
+    radial-gradient(
+      50% 50% at 50% 50%,
+      oklch(0.65 0.22 calc(var(--hue) + 300) / 0.5) 0,
+      oklch(0.65 0.22 calc(var(--hue) + 300) / 0) 75%
+    ),
+    radial-gradient(
+      50% 50% at 50% 50%,
+      oklch(0.65 0.22 calc(var(--hue) + 300) / 0.8) 0,
+      oklch(0.65 0.22 calc(var(--hue) + 300) / 0) 100%
+    );
+}
+
+.fluent-bg {
+  z-index: -1;
+  width: 100%;
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  padding-bottom: 300%;
+  width: 300%;
+  opacity: 0.18;
+  pointer-events: none;
+}
+
+:root.dark .fluent-bg {
+  opacity: 0.14;
+}
+
+.fluent-bg .blue-gradient {
+  position: inherit;
+  background-image: var(--fluent-primary-grad);
+  bottom: 10%;
+  left: 0;
+  right: 0;
+  top: 26%;
+}
+
+.fluent-bg .blue-gradient-bottom {
+  position: inherit;
+  background-image: var(--fluent-primary-grad);
+  bottom: 0;
+  left: 0;
+  right: 24.38%;
+  top: 51.52%;
+}
+
+.fluent-bg .green-gradient {
+  position: inherit;
+  background-image: var(--fluent-secondary-grad);
+  bottom: 44%;
+  left: 17%;
+  right: 17%;
+  top: 13.7%;
+}
+
+.fluent-bg .yellow-gradient {
+  position: inherit;
+  background-image: var(--fluent-tertiary-grad);
+  bottom: 33.2%;
+  left: 36.88%;
+  right: 19.69%;
+  top: 5.73%;
+}
+
+.fluent-bg .red-gradient {
+  position: inherit;
+  background-image: var(--fluent-quaternary-grad);
+  bottom: 45.27%;
+  left: 37.78%;
+  right: 4.9%;
+  top: 17.96%;
+}
+
+.fluent-bg .purple-gradient {
+  position: inherit;
+  background-image: var(--fluent-quinary-grad);
+  bottom: 38.4%;
+  left: 45.99%;
+  right: 1.86%;
+  top: 28.59%;
+}
+
+/* Animations */
+.fluent-bg .green-gradient {
+  animation: gga 40s infinite;
+}
+
+@keyframes gga {
+  50%,
+  100% {
+    transform: none;
+  }
+  75% {
+    transform: translateY(36%);
+  }
+}
+
+.fluent-bg .blue-gradient-bottom {
+  animation: bgba 80s infinite;
+}
+
+@keyframes bgba {
+  0%,
+  50% {
+    transform: none;
+  }
+  25% {
+    transform: translate(16%, -53%);
+  }
+}
+
+.fluent-bg .purple-gradient {
+  animation: pga 120s infinite;
+}
+
+@keyframes pga {
+  0%,
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+  25%,
+  75% {
+    opacity: 0.5;
+    transform: none;
+  }
+  50% {
+    opacity: 0.5;
+    transform: translate(-42%, 15%);
+  }
+}
