@@ -7,6 +7,8 @@ import {
 import { expressiveCodeConfig } from "@/config";
 import type { LIGHT_DARK_MODE } from "@/types/config";
 
+let lastAppliedHue: string | null = null;
+
 /**
  * Read the default hue from the in-DOM carrier element (or fallback).
  * Used as initial color accent when the user hasn't customized it yet.
@@ -28,9 +30,17 @@ export function getHue(): number {
 /**
  * Persist hue selection and update the CSS variable on <html>.
  */
+export function applyHueToDocument(hue: number): void {
+	const next = String(hue);
+	if (lastAppliedHue === next) return;
+	lastAppliedHue = next;
+	// Keep DOM writes small: a single custom property drives the entire palette
+	document.documentElement.style.setProperty("--hue", next);
+}
+
 export function setHue(hue: number): void {
 	localStorage.setItem("hue", String(hue));
-	document.documentElement.style.setProperty("--hue", String(hue));
+	applyHueToDocument(hue);
 }
 
 /**

@@ -158,6 +158,7 @@ declare global {
 const DROPDOWN_OFFSET = 8;
 const DEBOUNCE_DELAY = 16;
 
+
 function debounce<T extends (...args: any[]) => void>(fn: T, delay: number): (...args: Parameters<T>) => void {
     let timeoutId: number | undefined;
     return (...args: Parameters<T>) => {
@@ -166,7 +167,9 @@ function debounce<T extends (...args: any[]) => void>(fn: T, delay: number): (..
     };
 }
 
-function setToggle(triggerId: string, panelId: string): void {
+let navAbortController: AbortController | null = null;
+
+function setToggle(triggerId: string, panelId: string, signal: AbortSignal): void {
     const trigger = document.getElementById(triggerId);
     if (!trigger) return;
     
@@ -177,10 +180,10 @@ function setToggle(triggerId: string, panelId: string): void {
         const isClosed = panel.classList.contains("float-panel-closed");
         panel.classList.toggle("float-panel-closed");
         trigger.setAttribute("aria-expanded", isClosed.toString());
-    }, { once: false });
+    }, { once: false, signal });
 }
 
-function setupMoreLinksDropdown(): void {
+function setupMoreLinksDropdown(signal: AbortSignal): void {
     const trigger = document.getElementById("more-links-switch");
     const dropdown = document.getElementById("more-links-dropdown");
     if (!trigger || !dropdown) return;
@@ -215,7 +218,7 @@ function setupMoreLinksDropdown(): void {
     trigger.addEventListener("click", (e) => {
         e.stopPropagation();
         dropdown.classList.contains("is-visible") ? close() : open();
-    });
+    }, { signal });
 
     const handleOutsideClick = (e: Event) => {
         if (!dropdown.classList.contains("is-visible")) return;
@@ -226,7 +229,7 @@ function setupMoreLinksDropdown(): void {
             close();
         }
     };
-    document.addEventListener("click", handleOutsideClick);
+    document.addEventListener("click", handleOutsideClick, { signal });
 
     const debouncedUpdate = debounce(() => {
         if (dropdown.classList.contains("is-visible")) {
@@ -234,8 +237,8 @@ function setupMoreLinksDropdown(): void {
         }
     }, DEBOUNCE_DELAY);
 
-    window.addEventListener("resize", debouncedUpdate);
-    window.addEventListener("scroll", debouncedUpdate, { passive: true });
+    window.addEventListener("resize", debouncedUpdate, { signal });
+    window.addEventListener("scroll", debouncedUpdate, { passive: true, signal } as AddEventListenerOptions);
 }
 
 function ensureNavMenuStubs(): void {
@@ -245,8 +248,12 @@ function ensureNavMenuStubs(): void {
 }
 
 function initNavToggles(): void {
-    setToggle("display-settings-switch", "display-setting");
-    setupMoreLinksDropdown();
+    navAbortController?.abort();
+    navAbortController = new AbortController();
+    const { signal } = navAbortController;
+
+    setToggle("display-settings-switch", "display-setting", signal);
+    setupMoreLinksDropdown(signal);
     
     const navToggle = document.getElementById("nav-menu-switch");
     if (!navToggle) return;
@@ -256,7 +263,7 @@ function initNavToggles(): void {
     navToggle.addEventListener("click", () => {
         const expanded = navToggle.getAttribute("aria-expanded") === "true";
         (expanded ? window.closeNavMenu : window.openNavMenu)?.();
-    });
+    }, { signal });
 }
 
 if (document.readyState === "loading") {

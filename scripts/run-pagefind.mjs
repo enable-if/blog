@@ -18,17 +18,9 @@ try {
 	log(`Running Pagefind (platform=${platform}, arch=${arch})`);
 	run("npx --no-install pagefind --site dist");
 } catch (err) {
-	// On Windows ARM64, upstream binary may be missing; try the extended package, then fallback to skip
 	log(`First attempt failed: ${err?.message || err}`);
-	try {
-		log("Trying pagefind_extended fallback...");
-		run("npx --yes pagefind_extended --site dist");
-	} catch (err2) {
-		log(`Extended fallback failed: ${err2?.message || err2}`);
-		// Last resort: do not fail the build; print guidance
-		log(
-			"Skipping Pagefind index generation due to unsupported platform or install failure.",
-		);
-		log("You can run Pagefind manually on a supported platform or CI later.");
-	}
+	log(
+		"Skipping Pagefind index generation due to unsupported platform or install failure.",
+	);
+	log("You can run Pagefind manually on a supported platform or CI later.");
 }

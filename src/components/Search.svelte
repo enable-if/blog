@@ -13,6 +13,7 @@ let isSearching = false;
 let pagefindLoaded = false;
 let initialized = false;
 let searchTimer: number | null = null;
+let fallbackTimer: number | null = null;
 const DEBOUNCE_MS = 150;
 
 const fakeResult: SearchResult[] = [
@@ -95,35 +96,34 @@ onMount(() => {
 			typeof window !== "undefined" &&
 			!!window.pagefind &&
 			typeof window.pagefind.search === "function";
-		console.log("Pagefind status on init:", pagefindLoaded);
 		if (keywordDesktop) search(keywordDesktop, true);
 		if (keywordMobile) search(keywordMobile, false);
 	};
 
 	if (import.meta.env.DEV) {
-		console.log(
-			"Pagefind is not available in development mode. Using mock data.",
-		);
 		initializeSearch();
 	} else {
-		document.addEventListener("pagefindready", () => {
-			console.log("Pagefind ready event received.");
-			initializeSearch();
-		});
-		document.addEventListener("pagefindloaderror", () => {
-			console.warn(
-				"Pagefind load error event received. Search functionality will be limited.",
-			);
-			initializeSearch(); // Initialize with pagefindLoaded as false
-		});
+		const handleReady = () => initializeSearch();
+		const handleError = () => initializeSearch(); // Initialize with pagefindLoaded as false
+
+		document.addEventListener("pagefindready", handleReady);
+		document.addEventListener("pagefindloaderror", handleError);
 
 		// Fallback in case events are not caught or pagefind is already loaded by the time this script runs
-		setTimeout(() => {
+		fallbackTimer = window.setTimeout(() => {
 			if (!initialized) {
-				console.log("Fallback: Initializing search after timeout.");
 				initializeSearch();
 			}
 		}, 2000); // Adjust timeout as needed
+
+		return () => {
+			document.removeEventListener("pagefindready", handleReady);
+			document.removeEventListener("pagefindloaderror", handleError);
+			if (fallbackTimer !== null) {
+				clearTimeout(fallbackTimer);
+				fallbackTimer = null;
+			}
+		};
 	}
 });
 

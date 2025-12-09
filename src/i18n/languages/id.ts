@@ -2,50 +2,50 @@ import Key from "../i18nKey";
 import type { Translation } from "../translation";
 
 export const id: Translation = {
-  [Key.home]: "Beranda",
-  [Key.about]: "Tentang",
-  [Key.archive]: "Arsip",
-  [Key.search]: "Cari",
+	[Key.home]: "Beranda",
+	[Key.about]: "Tentang",
+	[Key.archive]: "Arsip",
+	[Key.search]: "Cari",
 
-  [Key.tags]: "Tag",
-  [Key.categories]: "Kategori",
-  [Key.recentPosts]: "Postingan Terbaru",
+	[Key.tags]: "Tag",
+	[Key.categories]: "Kategori",
+	[Key.recentPosts]: "Postingan Terbaru",
 
-  [Key.comments]: "Komentar",
+	[Key.comments]: "Komentar",
 
-  [Key.untitled]: "Tanpa Judul",
-  [Key.uncategorized]: "Tanpa Kategori",
-  [Key.noTags]: "Tanpa Tag",
+	[Key.untitled]: "Tanpa Judul",
+	[Key.uncategorized]: "Tanpa Kategori",
+	[Key.noTags]: "Tanpa Tag",
 
-  [Key.wordCount]: "kata",
-  [Key.wordsCount]: "kata",
-  [Key.minuteCount]: "menit",
-  [Key.minutesCount]: "menit",
-  [Key.postCount]: "postingan",
-  [Key.postsCount]: "postingan",
+	[Key.wordCount]: "kata",
+	[Key.wordsCount]: "kata",
+	[Key.minuteCount]: "menit",
+	[Key.minutesCount]: "menit",
+	[Key.postCount]: "postingan",
+	[Key.postsCount]: "postingan",
 
-  [Key.themeColor]: "Warna Tema",
+	[Key.themeColor]: "Warna Tema",
 
-  [Key.lightMode]: "Terang",
-  [Key.darkMode]: "Gelap",
-  [Key.systemMode]: "Sistem",
+	[Key.lightMode]: "Terang",
+	[Key.darkMode]: "Gelap",
+	[Key.systemMode]: "Sistem",
 
-  [Key.more]: "Lainnya",
+	[Key.more]: "Lainnya",
 
-  [Key.author]: "Penulis",
-  [Key.publishedAt]: "Diterbitkan pada",
-  [Key.license]: "Lisensi",
-  [Key.friends]: "Teman",
+	[Key.author]: "Penulis",
+	[Key.publishedAt]: "Diterbitkan pada",
+	[Key.license]: "Lisensi",
+	[Key.friends]: "Teman",
 
-  [Key.contentValidityFreshLabel]: "Konten terbaru",
-  [Key.contentValidityFreshDescription]:
-    "Terbit dalam {{freshMonths}} bulan terakhir; detailnya masih akurat.",
-  [Key.contentValidityCautionLabel]: "Periksa pembaruan",
-  [Key.contentValidityCautionDescription]:
-    "Terbit lebih dari {{freshMonths}} bulan lalu; beberapa detail mungkin berubah.",
-  [Key.contentValidityExpiredLabel]: "Konten kedaluwarsa",
-  [Key.contentValidityExpiredDescription]:
-    "Terbit lebih dari {{cautionMonths}} bulan lalu; informasinya bisa tidak berlaku.",
-  [Key.initialLoading]:
-    "Sedang memuat halaman, ini mungkin memerlukan beberapa detik.",
+	[Key.contentValidityFreshLabel]: "Konten terbaru",
+	[Key.contentValidityFreshDescription]:
+		"Terbit dalam {{freshMonths}} bulan terakhir; detailnya masih akurat.",
+	[Key.contentValidityCautionLabel]: "Periksa pembaruan",
+	[Key.contentValidityCautionDescription]:
+		"Terbit lebih dari {{freshMonths}} bulan lalu; beberapa detail mungkin berubah.",
+	[Key.contentValidityExpiredLabel]: "Konten kedaluwarsa",
+	[Key.contentValidityExpiredDescription]:
+		"Terbit lebih dari {{cautionMonths}} bulan lalu; informasinya bisa tidak berlaku.",
+	[Key.initialLoading]:
+		"Sedang memuat halaman, ini mungkin memerlukan beberapa detik.",
 };

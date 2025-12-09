@@ -1,25 +1,36 @@
 <script lang="ts">
-// Performance note:
-// Previously we used a reactive `$:` to call setHue on every slider move,
-// which wrote to localStorage and caused page-wide style recalculation.
-// Now we:
-// - Use requestAnimationFrame on `on:input` to preview via CSS variable only (no persistence)
-// - Persist with setHue on `on:change` (when finger/mouse is released)
-// This approach reduces main-thread work and keeps the drag interaction smooth.
 import I18nKey from "@i18n/i18nKey";
 import { i18n } from "@i18n/translation";
 import Icon from "@iconify/svelte";
 import { getDefaultHue, getHue, setHue } from "@utils/setting-utils";
+import { onDestroy } from "svelte";
 
 let panelEl: HTMLDivElement;
 
 let hue = getHue();
 const defaultHue = getDefaultHue();
 
+const PANEL_COLOR_PROPS = [
+	"--hue",
+	"--primary",
+	"--btn-content",
+	"--btn-regular-bg",
+	"--btn-regular-bg-hover",
+	"--btn-regular-bg-active",
+	"--float-panel-bg",
+];
+
 function resetHue() {
+	if (raf) {
+		cancelAnimationFrame(raf);
+		raf = 0;
+	}
 	// Reset to default and persist immediately with a smooth transition
 	hue = getDefaultHue();
 	setHue(hue);
+
+	// Clear panel overrides so it reflects the global hue
+	clearPanelOverrides();
 	const root = document.documentElement;
 	root.classList.add("hue-transition");
 	window.setTimeout(() => root.classList.remove("hue-transition"), 300);
@@ -37,12 +48,11 @@ function previewHue(next: number) {
 		raf = 0;
 		if (!panelEl) return;
 
-		// Only preview within the panel to avoid full-page reflow while dragging
+		// Only preview within the panel; do not touch global <html> hue during drag
 		const h = String(pendingHue);
 		const isDark = document.documentElement.classList.contains("dark");
 
-		// Batch style updates
-		Object.assign(panelEl.style, {
+		const previewValues: Record<string, string> = {
 			"--hue": h,
 			"--primary": isDark ? `oklch(0.75 0.14 ${h})` : `oklch(0.70 0.14 ${h})`,
 			"--btn-content": isDark
@@ -58,7 +68,14 @@ function previewHue(next: number) {
 				? `oklch(0.43 0.045 ${h})`
 				: `oklch(0.85 0.08 ${h})`,
 			"--float-panel-bg": isDark ? `oklch(0.19 0.015 ${h})` : "white",
-		});
+		};
+
+		for (const prop of PANEL_COLOR_PROPS) {
+			const val = previewValues[prop];
+			if (val !== undefined) {
+				panelEl.style.setProperty(prop, val);
+			}
+		}
 	});
 }
 
@@ -69,34 +86,43 @@ function onSliderInput(e: Event) {
 }
 
 function onSliderChange(e: Event) {
+	if (raf) {
+		cancelAnimationFrame(raf);
+		raf = 0;
+	}
 	const v = Number((e.currentTarget as HTMLInputElement).value);
 	// Persist selection once user finishes interaction
 	setHue(v);
 
 	// Remove local overrides so panel inherits the new global hue
-	if (panelEl) {
-		const props = [
-			"--hue",
-			"--primary",
-			"--btn-content",
-			"--btn-regular-bg",
-			"--btn-regular-bg-hover",
-			"--btn-regular-bg-active",
-			"--float-panel-bg",
-		];
-		for (const prop of props) {
-			panelEl.style.removeProperty(prop);
-		}
-	}
+	clearPanelOverrides();
 
 	// Add a short-lived global color transition for smoother apply
 	const root = document.documentElement;
 	root.classList.add("hue-transition");
 	setTimeout(() => root.classList.remove("hue-transition"), 300);
 }
+
+function clearPanelOverrides() {
+	if (!panelEl) return;
+	for (const prop of PANEL_COLOR_PROPS) {
+		panelEl.style.removeProperty(prop);
+	}
+}
+
+onDestroy(() => {
+	if (raf) {
+		cancelAnimationFrame(raf);
+	}
+	clearPanelOverrides();
+});
 </script>
 
-<div id="display-setting" bind:this={panelEl} class="float-panel float-panel-closed absolute transition-all w-80 right-4 px-4 py-4">
+<div
+  id="display-setting"
+  bind:this={panelEl}
+  class="float-panel float-panel-closed absolute transition-all w-80 right-4 px-4 py-4"
+>
     <div class="flex flex-row gap-2 mb-3 items-center justify-between">
         <div class="flex gap-2 font-bold text-lg text-neutral-900 dark:text-neutral-100 transition relative ml-3
             before:w-1 before:h-4 before:rounded-md before:bg-[var(--primary)]

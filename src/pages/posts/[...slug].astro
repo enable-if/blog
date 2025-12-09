@@ -10,27 +10,27 @@ import { i18n } from "@i18n/translation";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
 import { getSortedPosts } from "@utils/content-utils";
 import {
-  resolveContentValidityStage,
-  shouldShowContentValidityBanner,
+	resolveContentValidityStage,
+	shouldShowContentValidityBanner,
 } from "@utils/content-validity";
 import { formatDateToYYYYMMDD } from "@utils/date-utils";
 import { getDir, getPostUrlBySlug } from "@utils/url-utils";
 import { Icon } from "astro-icon/components";
 import {
-  contentValidityConfig,
-  giscusConfig,
-  licenseConfig,
-  profileConfig,
-  siteConfig,
+	contentValidityConfig,
+	giscusConfig,
+	licenseConfig,
+	profileConfig,
+	siteConfig,
 } from "@/config";
 import type { ContentValidityStage } from "@/types/config";
 
 export async function getStaticPaths() {
-  const blogEntries = await getSortedPosts();
-  return blogEntries.map((entry) => ({
-    params: { slug: entry.slug },
-    props: { entry },
-  }));
+	const blogEntries = await getSortedPosts();
+	return blogEntries.map((entry) => ({
+		params: { slug: entry.slug },
+		props: { entry },
+	}));
 }
 
 const { entry } = Astro.props;
@@ -38,136 +38,136 @@ const renderedEntry = await entry.render();
 const { Content, headings, remarkPluginFrontmatter } = renderedEntry;
 
 type BlogPostingLd = {
-  "@context": "https://schema.org";
-  "@type": "BlogPosting";
-  headline: string;
-  description: string;
-  keywords: string[];
-  author: {
-    "@type": "Person";
-    name: string;
-    url: string | URL;
-  };
-  datePublished: string;
-  inLanguage: string;
-  image?: string;
+	"@context": "https://schema.org";
+	"@type": "BlogPosting";
+	headline: string;
+	description: string;
+	keywords: string[];
+	author: {
+		"@type": "Person";
+		name: string;
+		url: string | URL;
+	};
+	datePublished: string;
+	inLanguage: string;
+	image?: string;
 };
 
 type ContentValidityCopy = {
-  label: string;
-  description: string;
+	label: string;
+	description: string;
 };
 
 type ValidityIndicatorPayload = {
-  published: string;
-  thresholds: typeof contentValidityConfig.thresholds;
-  texts: Record<ContentValidityStage, ContentValidityCopy>;
-  styles: typeof contentValidityConfig.banner;
-  mixing: typeof stageMixing;
+	published: string;
+	thresholds: typeof contentValidityConfig.thresholds;
+	texts: Record<ContentValidityStage, ContentValidityCopy>;
+	styles: typeof contentValidityConfig.banner;
+	mixing: typeof stageMixing;
 };
 
 type ValidityIndicatorData = {
-  texts: Record<ContentValidityStage, ContentValidityCopy>;
-  stage: ContentValidityStage;
-  payload: ValidityIndicatorPayload;
-  style: string;
+	texts: Record<ContentValidityStage, ContentValidityCopy>;
+	stage: ContentValidityStage;
+	payload: ValidityIndicatorPayload;
+	style: string;
 };
 
 const stageOrder: ContentValidityStage[] = ["fresh", "caution", "expired"];
 const stageMixing: Record<
-  ContentValidityStage,
-  { theme: number; accent: number }
+	ContentValidityStage,
+	{ theme: number; accent: number }
 > = {
-  fresh: { theme: 70, accent: 30 },
-  caution: { theme: 50, accent: 50 },
-  expired: { theme: 30, accent: 70 },
+	fresh: { theme: 70, accent: 30 },
+	caution: { theme: 50, accent: 50 },
+	expired: { theme: 30, accent: 70 },
 };
 
 const composeBannerVars = (stage: ContentValidityStage): string => {
-  const accent = contentValidityConfig.banner[stage].accent;
-  const { theme, accent: accentRatio } = stageMixing[stage];
-  const borderTheme = Math.min(theme + 15, 100);
-  const borderAccent = Math.max(accentRatio - 15, 0);
-  return [
-    `--validity-accent-${stage}:${accent}`,
-    `--validity-bg-${stage}:color-mix(in oklab,var(--primary) ${theme}%, ${accent} ${accentRatio}%)`,
-    `--validity-border-${stage}:color-mix(in oklab,var(--primary) ${borderTheme}%, ${accent} ${borderAccent}%)`,
-    `--validity-text-${stage}:color-mix(in oklab, ${accent} 45%, black)`,
-    `--validity-muted-${stage}:color-mix(in oklab, ${accent} 30%, black)`,
-    `--validity-icon-${stage}:color-mix(in oklab, ${accent} 80%, white)`,
-  ].join("; ");
+	const accent = contentValidityConfig.banner[stage].accent;
+	const { theme, accent: accentRatio } = stageMixing[stage];
+	const borderTheme = Math.min(theme + 15, 100);
+	const borderAccent = Math.max(accentRatio - 15, 0);
+	return [
+		`--validity-accent-${stage}:${accent}`,
+		`--validity-bg-${stage}:color-mix(in oklab,var(--primary) ${theme}%, ${accent} ${accentRatio}%)`,
+		`--validity-border-${stage}:color-mix(in oklab,var(--primary) ${borderTheme}%, ${accent} ${borderAccent}%)`,
+		`--validity-text-${stage}:color-mix(in oklab, ${accent} 45%, black)`,
+		`--validity-muted-${stage}:color-mix(in oklab, ${accent} 30%, black)`,
+		`--validity-icon-${stage}:color-mix(in oklab, ${accent} 80%, white)`,
+	].join("; ");
 };
 
 const validityIndicator: ValidityIndicatorData | null = (() => {
-  if (entry.data.validityCheck === false) {
-    return null;
-  }
-  if (
-    !shouldShowContentValidityBanner(
-      entry.data.published,
-      contentValidityConfig
-    )
-  ) {
-    return null;
-  }
-  const { freshMonths, cautionMonths } = contentValidityConfig.thresholds;
-  const texts: Record<ContentValidityStage, ContentValidityCopy> = {
-    fresh: {
-      label: i18n(I18nKey.contentValidityFreshLabel),
-      description: i18n(I18nKey.contentValidityFreshDescription, {
-        freshMonths,
-      }),
-    },
-    caution: {
-      label: i18n(I18nKey.contentValidityCautionLabel),
-      description: i18n(I18nKey.contentValidityCautionDescription, {
-        freshMonths,
-      }),
-    },
-    expired: {
-      label: i18n(I18nKey.contentValidityExpiredLabel),
-      description: i18n(I18nKey.contentValidityExpiredDescription, {
-        cautionMonths,
-      }),
-    },
-  };
-  const stage = resolveContentValidityStage(
-    entry.data.published,
-    new Date(),
-    contentValidityConfig
-  );
-  const payload: ValidityIndicatorPayload = {
-    published: entry.data.published.toISOString(),
-    thresholds: contentValidityConfig.thresholds,
-    texts,
-    styles: contentValidityConfig.banner,
-    mixing: stageMixing,
-  };
-  const style = `${stageOrder.map((s) => composeBannerVars(s)).join("; ")};`;
-  return { texts, stage, payload, style };
+	if (entry.data.validityCheck === false) {
+		return null;
+	}
+	if (
+		!shouldShowContentValidityBanner(
+			entry.data.published,
+			contentValidityConfig,
+		)
+	) {
+		return null;
+	}
+	const { freshMonths, cautionMonths } = contentValidityConfig.thresholds;
+	const texts: Record<ContentValidityStage, ContentValidityCopy> = {
+		fresh: {
+			label: i18n(I18nKey.contentValidityFreshLabel),
+			description: i18n(I18nKey.contentValidityFreshDescription, {
+				freshMonths,
+			}),
+		},
+		caution: {
+			label: i18n(I18nKey.contentValidityCautionLabel),
+			description: i18n(I18nKey.contentValidityCautionDescription, {
+				freshMonths,
+			}),
+		},
+		expired: {
+			label: i18n(I18nKey.contentValidityExpiredLabel),
+			description: i18n(I18nKey.contentValidityExpiredDescription, {
+				cautionMonths,
+			}),
+		},
+	};
+	const stage = resolveContentValidityStage(
+		entry.data.published,
+		new Date(),
+		contentValidityConfig,
+	);
+	const payload: ValidityIndicatorPayload = {
+		published: entry.data.published.toISOString(),
+		thresholds: contentValidityConfig.thresholds,
+		texts,
+		styles: contentValidityConfig.banner,
+		mixing: stageMixing,
+	};
+	const style = `${stageOrder.map((s) => composeBannerVars(s)).join("; ")};`;
+	return { texts, stage, payload, style };
 })();
 
 const jsonLd: BlogPostingLd = {
-  "@context": "https://schema.org",
-  "@type": "BlogPosting",
-  headline: entry.data.title,
-  description: entry.data.description || entry.data.title,
-  keywords: entry.data.tags,
-  author: {
-    "@type": "Person",
-    name: profileConfig.name,
-    url: Astro.site ?? "",
-  },
-  datePublished: formatDateToYYYYMMDD(entry.data.published),
-  inLanguage: entry.data.lang
-    ? entry.data.lang.replace("_", "-")
-    : siteConfig.lang.replace("_", "-"),
+	"@context": "https://schema.org",
+	"@type": "BlogPosting",
+	headline: entry.data.title,
+	description: entry.data.description || entry.data.title,
+	keywords: entry.data.tags,
+	author: {
+		"@type": "Person",
+		name: profileConfig.name,
+		url: Astro.site ?? "",
+	},
+	datePublished: formatDateToYYYYMMDD(entry.data.published),
+	inLanguage: entry.data.lang
+		? entry.data.lang.replace("_", "-")
+		: siteConfig.lang.replace("_", "-"),
 };
 if (entry.data.image) {
-  const img = entry.data.image.startsWith("http")
-    ? entry.data.image
-    : new URL(entry.data.image, Astro.site).toString();
-  jsonLd.image = img;
+	const img = entry.data.image.startsWith("http")
+		? entry.data.image
+		: new URL(entry.data.image, Astro.site).toString();
+	jsonLd.image = img;
 }
 ---
 
