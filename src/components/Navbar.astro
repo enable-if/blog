@@ -107,6 +107,13 @@ const moreLinks = links.slice(2);
                     </button>
             )}
             <LightDarkSwitch client:only="svelte"></LightDarkSwitch>
+            <a
+                href={url('/settings/')}
+                aria-label="Settings"
+                class="btn-plain scale-animation rounded-lg h-11 w-11 active:scale-90 hidden md:flex items-center justify-center"
+            >
+                <Icon name="material-symbols:settings-outline-rounded" class="text-[1.25rem]"></Icon>
+            </a>
             <button
                 aria-label="Menu"
                 name="Nav Menu"
@@ -135,13 +142,35 @@ const moreLinks = links.slice(2);
     #more-links-dropdown {
         opacity: 0;
         visibility: hidden;
-        transform: translateY(-8px);
-        transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
+        /* Use transform3d for GPU acceleration */
+        transform: translate3d(0, -8px, 0);
+        will-change: transform, opacity;
+        transition:
+            opacity 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+            visibility 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+            transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        /* Optimize performance */
+        contain: layout style paint;
     }
     #more-links-dropdown.is-visible {
         opacity: 1;
         visibility: visible;
-        transform: translateY(0);
+        transform: translate3d(0, 0, 0);
+    }
+    /* Prevent layout shifts on navbar */
+    #navbar {
+        contain: layout;
+    }
+    /* Optimize hover animations */
+    .more-link {
+        will-change: background-color;
+    }
+
+    /* Reduce motion support */
+    @media (prefers-reduced-motion: reduce) {
+        #more-links-dropdown {
+            transition-duration: 0.01ms !important;
+        }
     }
 </style>
 
@@ -156,14 +185,32 @@ declare global {
 }
 
 const DROPDOWN_OFFSET = 8;
-const DEBOUNCE_DELAY = 16;
-
+const DEBOUNCE_DELAY = 100;  // Increased debounce delay for better performance
+const THROTTLE_DELAY = 16;
 
 function debounce<T extends (...args: any[]) => void>(fn: T, delay: number): (...args: Parameters<T>) => void {
     let timeoutId: number | undefined;
     return (...args: Parameters<T>) => {
         clearTimeout(timeoutId);
         timeoutId = setTimeout(() => fn(...args), delay) as unknown as number;
+    };
+}
+
+function throttle<T extends (...args: any[]) => void>(fn: T, delay: number): (...args: Parameters<T>) => void {
+    let lastRun = 0;
+    let timeoutId: number | undefined;
+    return (...args: Parameters<T>) => {
+        const now = Date.now();
+        clearTimeout(timeoutId);
+        if (now - lastRun >= delay) {
+            fn(...args);
+            lastRun = now;
+        } else {
+            timeoutId = setTimeout(() => {
+                fn(...args);
+                lastRun = Date.now();
+            }, delay - (now - lastRun)) as unknown as number;
+        }
     };
 }
 
@@ -226,10 +273,16 @@ function setupMoreLinksDropdown(signal: AbortSignal): void {
         if (!dropdown.contains(target) && !trigger.contains(target)) {
             close();
         } else if ((target as HTMLElement).closest?.(".more-link")) {
-            close();
+            setTimeout(() => close(), 100);
         }
     };
     document.addEventListener("click", handleOutsideClick, { signal });
+    
+    const throttledUpdate = throttle(() => {
+        if (dropdown.classList.contains("is-visible")) {
+            updatePosition();
+        }
+    }, THROTTLE_DELAY);
 
     const debouncedUpdate = debounce(() => {
         if (dropdown.classList.contains("is-visible")) {
@@ -238,7 +291,7 @@ function setupMoreLinksDropdown(signal: AbortSignal): void {
     }, DEBOUNCE_DELAY);
 
     window.addEventListener("resize", debouncedUpdate, { signal });
-    window.addEventListener("scroll", debouncedUpdate, { passive: true, signal } as AddEventListenerOptions);
+    window.addEventListener("scroll", throttledUpdate, { passive: true, signal } as AddEventListenerOptions);
 }
 
 function ensureNavMenuStubs(): void {

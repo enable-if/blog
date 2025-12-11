@@ -1,73 +1,182 @@
-/* Custom Giscus theme (light) aligned with Material-inspired tokens */
-:root {
-  color-scheme: light;
+/*!
+ * Custom Giscus theme (light) for blog
+ * Adapts to blog's dynamic --hue theme color
+ */
 
-  /* Surfaces */
-  --color-canvas-default: transparent; /* blend with page card */
-  --color-canvas-subtle: transparent;
-  /* Elevation for cards/panels inside giscus */
-  --shadow-resting: 0 1px 2px rgba(0, 0, 0, 0.08);
-  --shadow-hover: 0 2px 6px rgba(0, 0, 0, 0.1);
-  --shadow-focus: 0 0 0 3px rgba(34, 197, 94, 0.3);
+main {
+  /* Syntax highlighting colors */
+  --color-prettylights-syntax-comment: #6b7280;
+  --color-prettylights-syntax-constant: #0284c7;
+  --color-prettylights-syntax-entity: #7c3aed;
+  --color-prettylights-syntax-storage-modifier-import: #374151;
+  --color-prettylights-syntax-entity-tag: #059669;
+  --color-prettylights-syntax-keyword: #dc2626;
+  --color-prettylights-syntax-string: #0891b2;
+  --color-prettylights-syntax-variable: #ea580c;
+  --color-prettylights-syntax-brackethighlighter-unmatched: #dc2626;
+  --color-prettylights-syntax-invalid-illegal-text: #111827;
+  --color-prettylights-syntax-invalid-illegal-bg: #fecaca;
+  --color-prettylights-syntax-carriage-return-text: #111827;
+  --color-prettylights-syntax-carriage-return-bg: #fca5a5;
+  --color-prettylights-syntax-string-regexp: #059669;
+  --color-prettylights-syntax-markup-list: #ca8a04;
+  --color-prettylights-syntax-markup-heading: #1d4ed8;
+  --color-prettylights-syntax-markup-italic: #374151;
+  --color-prettylights-syntax-markup-bold: #374151;
+  --color-prettylights-syntax-markup-deleted-text: #991b1b;
+  --color-prettylights-syntax-markup-deleted-bg: #fee2e2;
+  --color-prettylights-syntax-markup-inserted-text: #166534;
+  --color-prettylights-syntax-markup-inserted-bg: #dcfce7;
+  --color-prettylights-syntax-markup-changed-text: #9a3412;
+  --color-prettylights-syntax-markup-changed-bg: #ffedd5;
+  --color-prettylights-syntax-markup-ignored-text: #374151;
+  --color-prettylights-syntax-markup-ignored-bg: #dbeafe;
+  --color-prettylights-syntax-meta-diff-range: #7c3aed;
+  --color-prettylights-syntax-brackethighlighter-angle: #6b7280;
+  --color-prettylights-syntax-sublimelinter-gutter-mark: #9ca3af;
+  --color-prettylights-syntax-constant-other-reference-link: #0891b2;
 
-  /* Typography */
-  --color-fg-default: #111827; /* gray-900 for strong readability */
-  --color-fg-muted: #4b5563; /* gray-600 for secondary text */
-  --color-fg-subtle: #6b7280; /* gray-500 for meta */
-
-  /* Borders & Dividers */
-  --color-border-default: rgba(0, 0, 0, 0.12);
-  --color-neutral-muted: rgba(0, 0, 0, 0.06);
-
-  /* Brand / Accent */
-  --color-accent-fg: #22c55e; /* Primary link color */
-  --color-accent-emphasis: #16a34a; /* Emphasized/filled */
-
-  /* Inputs */
-  --color-input-bg: rgba(0, 0, 0, 0.02);
-  --color-input-border: rgba(0, 0, 0, 0.12);
-  --color-input-contrast-bg: #ffffff;
-
-  /* Buttons - default */
-  --color-btn-text: #111827;
+  /* Button styles */
+  --color-btn-text: rgba(0, 0, 0, 0.85);
   --color-btn-bg: rgba(0, 0, 0, 0.04);
   --color-btn-border: rgba(0, 0, 0, 0.1);
-  --color-btn-hover-bg: rgba(0, 0, 0, 0.06);
-  --color-btn-hover-border: rgba(0, 0, 0, 0.14);
-  --color-btn-active-bg: rgba(0, 0, 0, 0.08);
-  --color-btn-active-border: rgba(0, 0, 0, 0.18);
+  --color-btn-shadow: 0 0 transparent;
+  --color-btn-inset-shadow: 0 0 transparent;
+  --color-btn-hover-bg: rgba(0, 0, 0, 0.08);
+  --color-btn-hover-border: rgba(0, 0, 0, 0.15);
+  --color-btn-active-bg: rgba(0, 0, 0, 0.1);
+  --color-btn-active-border: rgba(0, 0, 0, 0.2);
   --color-btn-selected-bg: rgba(0, 0, 0, 0.08);
-  --color-btn-shadow: none;
-  --color-btn-inset-shadow: none;
-  --color-btn-counter-bg: rgba(0, 0, 0, 0.06);
-  --color-btn-focus-border: #16a34a;
-  --color-btn-focus-shadow: 0 0 0 3px rgba(34, 197, 94, 0.35);
-  --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.3);
 
-  /* Buttons - primary (filled) */
-  --color-btn-primary-text: #ffffff;
-  --color-btn-primary-bg: #16a34a; /* green-600 */
-  --color-btn-primary-border: #16a34a;
-  --color-btn-primary-hover-bg: #15803d; /* green-700 */
-  --color-btn-primary-hover-border: #15803d;
-  --color-btn-primary-active-bg: #166534; /* green-800 */
-  --color-btn-primary-active-border: #166534;
-  --color-btn-primary-selected-bg: #166534;
-  --color-btn-primary-disabled-bg: #9ca3af; /* gray-400 */
-  --color-btn-primary-disabled-text: #ffffff;
-  --color-btn-primary-disabled-border: #9ca3af;
-  --color-btn-primary-shadow: none;
-  --color-btn-primary-inset-shadow: none;
-  --color-btn-primary-focus-shadow: 0 0 0 3px rgba(34, 197, 94, 0.35);
+  /* Primary button - uses theme color */
+  --color-btn-primary-text: #fff;
+  --color-btn-primary-bg: oklch(0.55 0.15 var(--hue, 250));
+  --color-btn-primary-border: oklch(0.55 0.15 var(--hue, 250));
+  --color-btn-primary-shadow: 0 0 transparent;
+  --color-btn-primary-inset-shadow: 0 0 transparent;
+  --color-btn-primary-hover-bg: oklch(0.5 0.16 var(--hue, 250));
+  --color-btn-primary-hover-border: oklch(0.5 0.16 var(--hue, 250));
+  --color-btn-primary-selected-bg: oklch(0.45 0.15 var(--hue, 250));
+  --color-btn-primary-selected-shadow: 0 0 transparent;
+  --color-btn-primary-disabled-text: rgba(255, 255, 255, 0.6);
+  --color-btn-primary-disabled-bg: oklch(0.7 0.08 var(--hue, 250));
+  --color-btn-primary-disabled-border: oklch(0.7 0.08 var(--hue, 250));
 
-  /* States */
-  --color-danger-fg: #dc2626; /* red-600 */
-  --color-success-fg: #16a34a; /* green-600 */
-  --color-attention-fg: #a16207; /* amber-700 */
+  /* Action list */
+  --color-action-list-item-default-hover-bg: rgba(0, 0, 0, 0.06);
 
-  /* Focus outline for links/controls */
-  --color-focus-outline: rgba(34, 197, 94, 0.65);
+  /* Segmented control */
+  --color-segmented-control-bg: rgba(0, 0, 0, 0.05);
+  --color-segmented-control-button-bg: #ffffff;
+  --color-segmented-control-button-selected-border: rgba(0, 0, 0, 0.15);
 
-  /* Code block syntax (optional minimal) */
-  --color-prettylights-syntax-comment: #6b7280; /* gray-500 */
+  /* Text colors */
+  --color-fg-default: rgba(0, 0, 0, 0.85);
+  --color-fg-muted: rgba(0, 0, 0, 0.6);
+  --color-fg-subtle: rgba(0, 0, 0, 0.45);
+
+  /* Canvas/surface colors - transparent to blend with blog card */
+  --color-canvas-default: transparent;
+  --color-canvas-overlay: rgba(255, 255, 255, 0.95);
+  --color-canvas-inset: rgba(0, 0, 0, 0.02);
+  --color-canvas-subtle: rgba(0, 0, 0, 0.03);
+
+  /* Border colors */
+  --color-border-default: rgba(0, 0, 0, 0.1);
+  --color-border-muted: rgba(0, 0, 0, 0.06);
+  --color-neutral-muted: rgba(0, 0, 0, 0.06);
+
+  /* Accent colors - uses theme color */
+  --color-accent-fg: oklch(0.5 0.15 var(--hue, 250));
+  --color-accent-emphasis: oklch(0.55 0.15 var(--hue, 250));
+  --color-accent-muted: oklch(0.6 0.12 var(--hue, 250) / 0.3);
+  --color-accent-subtle: oklch(0.65 0.1 var(--hue, 250) / 0.15);
+
+  /* Status colors */
+  --color-success-fg: #16a34a;
+  --color-attention-fg: #ca8a04;
+  --color-attention-muted: rgba(202, 138, 4, 0.3);
+  --color-attention-subtle: rgba(202, 138, 4, 0.12);
+  --color-danger-fg: #dc2626;
+  --color-danger-muted: rgba(220, 38, 38, 0.3);
+  --color-danger-subtle: rgba(220, 38, 38, 0.1);
+
+  /* Shadows */
+  --color-primer-shadow-inset: 0 0 transparent;
+  --color-scale-gray-7: rgba(0, 0, 0, 0.08);
+  --color-scale-blue-8: oklch(0.6 0.12 var(--hue, 250) / 0.2);
+
+  /* Social reactions */
+  --color-social-reaction-bg-hover: rgba(0, 0, 0, 0.06);
+  --color-social-reaction-bg-reacted-hover: oklch(0.65 0.1 var(--hue, 250) / 0.2);
+}
+
+main .pagination-loader-container {
+  background-image: url("https://github.com/images/modules/pulls/progressive-disclosure-line.svg");
+}
+
+/*! Custom CSS */
+
+.gsc-reactions-count {
+  display: none;
+}
+
+.gsc-timeline {
+  flex-direction: column-reverse;
+}
+
+.gsc-header {
+  padding-bottom: 1rem;
+}
+
+.gsc-comments > .gsc-header {
+  order: 1;
+}
+
+.gsc-comments > .gsc-comment-box {
+  order: 2;
+  margin-bottom: 1rem;
+}
+
+.gsc-comments > .gsc-timeline {
+  order: 3;
+}
+
+.gsc-homepage-bg {
+  background-color: transparent;
+}
+
+main .gsc-loading-image {
+  background-image: url("https://github.githubassets.com/images/mona-loading-default.gif");
+}
+
+/* Comment box styling */
+.gsc-comment-box {
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(0, 0, 0, 0.02);
+}
+
+/* Comment styling */
+.gsc-comment {
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Reaction button styling */
+.gsc-reactions-button {
+  border-radius: 6px;
+}
+
+/* Input styling */
+.gsc-comment-box textarea {
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.gsc-comment-box textarea:focus {
+  border-color: oklch(0.55 0.15 var(--hue, 250));
+  box-shadow: 0 0 0 3px oklch(0.6 0.12 var(--hue, 250) / 0.2);
 }

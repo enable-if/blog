@@ -9,14 +9,14 @@ import { profileConfig, siteConfig } from "@/config";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 import {
-	AUTO_MODE,
-	BANNER_HEIGHT,
-	BANNER_HEIGHT_EXTEND,
-	BANNER_HEIGHT_HOME,
-	DARK_MODE,
-	DEFAULT_THEME,
-	LIGHT_MODE,
-	PAGE_WIDTH,
+  AUTO_MODE,
+  BANNER_HEIGHT,
+  BANNER_HEIGHT_EXTEND,
+  BANNER_HEIGHT_HOME,
+  DARK_MODE,
+  DEFAULT_THEME,
+  LIGHT_MODE,
+  PAGE_WIDTH,
 } from "../constants/constants";
 import { defaultFavicons } from "../constants/icon";
 import type { Favicon } from "../types/config";
@@ -25,11 +25,11 @@ import "katex/dist/katex.css";
 import "../styles/acrylic.css";
 
 interface Props {
-	title?: string;
-	banner?: string;
-	description?: string;
-	lang?: string;
-	setOGTypeArticle?: boolean;
+  title?: string;
+  banner?: string;
+  description?: string;
+  lang?: string;
+  setOGTypeArticle?: boolean;
 }
 
 let { title, banner, description, lang, setOGTypeArticle } = Astro.props;
@@ -44,67 +44,67 @@ const isHomePage = pathsEqual(Astro.url.pathname, url("/"));
 const configHue = siteConfig.themeColor.hue;
 // Respect switch: when usePostCover is true and a banner is provided by the page, use it; otherwise fallback to site default.
 if (
-	!siteConfig.banner.usePostCover ||
-	!banner ||
-	typeof banner !== "string" ||
-	banner.trim() === ""
+  !siteConfig.banner.usePostCover ||
+  !banner ||
+  typeof banner !== "string" ||
+  banner.trim() === ""
 ) {
-	banner = siteConfig.banner.src;
+  banner = siteConfig.banner.src;
 }
 
 const enableBanner = siteConfig.banner.enable;
 
 const pageTitle = title
-	? `${title} - ${siteConfig.title}`
-	: `${siteConfig.title} - ${siteConfig.subtitle}`;
+  ? `${title} - ${siteConfig.title}`
+  : `${siteConfig.title} - ${siteConfig.subtitle}`;
 
 const favicons: Favicon[] =
-	siteConfig.favicon.length > 0 ? siteConfig.favicon : defaultFavicons;
+  siteConfig.favicon.length > 0 ? siteConfig.favicon : defaultFavicons;
 
 const parseFaviconScore = (sizes?: string) => {
-	if (!sizes) return 0;
-	const [w, h] = sizes.split("x").map((value) => Number.parseInt(value, 10));
-	if (!Number.isFinite(w)) return 0;
-	if (!Number.isFinite(h)) return w * w;
-	return w * h;
+  if (!sizes) return 0;
+  const [w, h] = sizes.split("x").map((value) => Number.parseInt(value, 10));
+  if (!Number.isFinite(w)) return 0;
+  if (!Number.isFinite(h)) return w * w;
+  return w * h;
 };
 
 const selectLargestFavicon = (icons: Favicon[]) => {
-	return icons
-		.map((icon) => ({ icon, score: parseFaviconScore(icon.sizes) }))
-		.sort((a, b) => b.score - a.score)[0]?.icon;
+  return icons
+    .map((icon) => ({ icon, score: parseFaviconScore(icon.sizes) }))
+    .sort((a, b) => b.score - a.score)[0]?.icon;
 };
 
 const loaderFaviconNeutral =
-	selectLargestFavicon(favicons.filter((icon) => !icon.theme)) ||
-	selectLargestFavicon(favicons) ||
-	favicons[0];
+  selectLargestFavicon(favicons.filter((icon) => !icon.theme)) ||
+  selectLargestFavicon(favicons) ||
+  favicons[0];
 const loaderFaviconLight = selectLargestFavicon(
-	favicons.filter((icon) => icon.theme === "light"),
+  favicons.filter((icon) => icon.theme === "light")
 );
 const loaderFaviconDark = selectLargestFavicon(
-	favicons.filter((icon) => icon.theme === "dark"),
+  favicons.filter((icon) => icon.theme === "dark")
 );
 
 // const siteLang = siteConfig.lang.replace('_', '-')
 if (!lang) {
-	lang = `${siteConfig.lang}`;
+  lang = `${siteConfig.lang}`;
 }
 const siteLang = lang.replace("_", "-");
 
 const bannerOffsetByPosition = {
-	top: `${BANNER_HEIGHT_EXTEND}vh`,
-	center: `${BANNER_HEIGHT_EXTEND / 2}vh`,
-	bottom: "0",
+  top: `${BANNER_HEIGHT_EXTEND}vh`,
+  center: `${BANNER_HEIGHT_EXTEND / 2}vh`,
+  bottom: "0",
 };
 const bannerOffset =
-	bannerOffsetByPosition[siteConfig.banner.position || "center"];
+  bannerOffsetByPosition[siteConfig.banner.position || "center"];
 ---
 
 <!doctype html>
 <html
   lang={siteLang}
-  class="bg-[var(--page-bg)] transition text-[14px] md:text-[16px]"
+  class="bg-[var(--page-bg)] text-[14px] md:text-[16px]"
   data-overlayscrollbars-initialize
   data-cold-start="true"
 >
@@ -237,39 +237,137 @@ const bannerOffset =
 
     <slot name="head" />
 
+    <!-- External Font CSS (loaded on-demand via class) -->
+    <link
+      rel="stylesheet"
+      href="https://cdn-font.hyperos.mi.com/font/css?family=MiSans_VF:VF:Chinese_Simplify"
+      media="print"
+      id="misans-font-css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://developer.huawei.com/config/commonResource/font/font.css"
+      media="print"
+      id="harmonyos-font-css"
+    />
+    <script is:inline>
+      // Load fonts based on user settings
+      (function () {
+        var pageFont = localStorage.getItem("pageFont");
+        var needMiSans = pageFont === "misans";
+        var needHarmonyOS =
+          pageFont === "harmonyos" || pageFont === "noto-sans";
+
+        if (needMiSans) {
+          var misansLink = document.getElementById("misans-font-css");
+          if (misansLink) misansLink.media = "all";
+        }
+        if (needHarmonyOS) {
+          var harmonyLink = document.getElementById("harmonyos-font-css");
+          if (harmonyLink) harmonyLink.media = "all";
+        }
+      })();
+    </script>
+
     <link
       rel="alternate"
       type="application/rss+xml"
       title={profileConfig.name}
       href={`${Astro.site}rss.xml`}
     />
-    <script type="text/javascript" is:inline>
-      (function (
-        windowObj,
-        documentObj,
-        clarityKey,
-        scriptTag,
-        clarityId,
-        scriptElem,
-        firstScript
-      ) {
-        windowObj[clarityKey] =
-          windowObj[clarityKey] ||
-          function () {
-            (windowObj[clarityKey].q = windowObj[clarityKey].q || []).push(
-              arguments
-            );
-          };
-        scriptElem = documentObj.createElement(scriptTag);
-        scriptElem.async = 1;
-        scriptElem.src = "https://www.clarity.ms/tag/" + clarityId;
-        firstScript = documentObj.getElementsByTagName(scriptTag)[0];
-        firstScript.parentNode.insertBefore(scriptElem, firstScript);
-      })(window, document, "clarity", "script", "tlcnbxjj3p");
+    <!-- Apply user settings before page renders -->
+    <script is:inline>
+      (function () {
+        // Performance detection for first-time visitors
+        var lowPerfKey = "lowPerformanceDetected";
+        var advMatKey = "advancedMaterials";
+        var matLevelKey = "materialLevel";
+
+        // Detect low performance if not cached
+        if (localStorage.getItem(lowPerfKey) === null) {
+          var isLowPerf = false;
+          // Check reduced motion preference
+          if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+            isLowPerf = true;
+          }
+          // Check data saver
+          if (navigator.connection && navigator.connection.saveData) {
+            isLowPerf = true;
+          }
+          // Check CPU cores
+          var cores = navigator.hardwareConcurrency || 0;
+          if (cores > 0 && cores <= 4) {
+            isLowPerf = true;
+          }
+          // Check device memory (Chrome/Edge)
+          if (navigator.deviceMemory !== undefined && navigator.deviceMemory <= 4) {
+            isLowPerf = true;
+          }
+          // Mobile with low cores
+          var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+          if (isMobile && cores <= 6) {
+            isLowPerf = true;
+          }
+          localStorage.setItem(lowPerfKey, String(isLowPerf));
+
+          // Set default for advanced materials based on performance
+          if (localStorage.getItem(advMatKey) === null) {
+            localStorage.setItem(advMatKey, String(!isLowPerf));
+          }
+        }
+
+        var materialLevel = localStorage.getItem(matLevelKey);
+        var advMat = localStorage.getItem(advMatKey);
+        var isLowPerfDevice = localStorage.getItem(lowPerfKey) === "true";
+
+        // Determine if advanced materials should be enabled
+        // Default: enabled for high-perf devices, disabled for low-perf
+        var advMatEnabled = advMat === null ? !isLowPerfDevice : advMat === "true";
+
+        // If advanced materials is disabled, use reduce-motion
+        if (!advMatEnabled) {
+          document.documentElement.classList.add("reduce-motion");
+        } else {
+          // Apply material level (default: normal/basic)
+          if (materialLevel === "full") {
+            document.documentElement.classList.add("material-full");
+          } else if (materialLevel === "opaque") {
+            document.documentElement.classList.add("reduce-motion");
+          } else {
+            // normal mode or default - add material-normal class
+            document.documentElement.classList.add("material-normal");
+          }
+        }
+
+        // Apply font settings
+        var pageFont = localStorage.getItem("pageFont");
+        if (pageFont === "misans") {
+          document.documentElement.classList.add("font-misans");
+        } else if (pageFont === "harmonyos" || pageFont === "noto-sans") {
+          document.documentElement.classList.add("font-harmonyos");
+        }
+
+        // Load Clarity only if analytics is enabled (default: true)
+        var analyticsEnabled = localStorage.getItem("analyticsEnabled");
+        if (analyticsEnabled !== "false") {
+          (function (w, d, k, s, id, e, f) {
+            w[k] =
+              w[k] ||
+              function () {
+                (w[k].q = w[k].q || []).push(arguments);
+              };
+            e = d.createElement(s);
+            e.async = 1;
+            e.src = "https://www.clarity.ms/tag/" + id;
+            f = d.getElementsByTagName(s)[0];
+            f.parentNode.insertBefore(e, f);
+          })(window, document, "clarity", "script", "tlcnbxjj3p");
+        }
+      })();
     </script>
   </head>
   <body
-    class="min-h-screen transition"
+    class="min-h-screen"
     class:list={[{ "lg:is-home": isHomePage, "enable-banner": enableBanner }]}
     data-overlayscrollbars-initialize
   >
@@ -1227,5 +1325,237 @@ function disableAnimation() {
     setup();
   } else {
     document.addEventListener("swup:enable", setup);
+  }
+</script>
+
+<script>
+  import {
+    getAdvancedMaterials,
+    setAdvancedMaterials,
+    getAnalyticsEnabled,
+    setAnalyticsEnabled,
+    getHue,
+    setHue,
+    getDefaultHue,
+    getMaterialLevel,
+    setMaterialLevel,
+    getPageFont,
+    setPageFont,
+    isLowPerformanceDevice,
+    type MaterialLevel,
+    type FontOption,
+  } from "../utils/setting-utils";
+  import {
+    initWinUIComboBox,
+    initWinUIToggle,
+    initWinUIExpander,
+    resetWinUIComponents,
+  } from "../utils/winui-components";
+
+  function initSettingsPage() {
+    const advancedMaterialsToggle = document.getElementById(
+      "toggle-advanced-materials"
+    );
+    const materialLevelCombobox = document.getElementById(
+      "material-level-combobox"
+    );
+    const analyticsToggle = document.getElementById("toggle-analytics");
+    const analyticsReloadHint = document.getElementById(
+      "analytics-reload-hint"
+    );
+    const lowPerfWarning = document.getElementById("low-perf-warning");
+    const hueSlider = document.getElementById(
+      "hue-slider"
+    ) as HTMLInputElement | null;
+    const themeColorSummary = document.getElementById("theme-color-summary");
+    const themeColorPreview = document.getElementById("theme-color-preview");
+    const resetHueBtn = document.getElementById("reset-hue-btn");
+    const themeColorExpander = document.getElementById("theme-color-expander");
+
+    // Only proceed if we're on the settings page
+    if (!advancedMaterialsToggle && !analyticsToggle && !hueSlider) {
+      return;
+    }
+
+    // Show low performance warning if device is detected as low-performance
+    if (lowPerfWarning && isLowPerformanceDevice()) {
+      lowPerfWarning.classList.remove("hidden");
+    }
+
+    // Helper to get color name from hue value
+    const getColorName = (hue: number): string => {
+      // Normalize hue to 0-360
+      const h = ((hue % 360) + 360) % 360;
+      // Color ranges based on standard color wheel
+      if (h >= 0 && h < 30) return "红色";
+      if (h >= 30 && h < 60) return "橙色";
+      if (h >= 60 && h < 90) return "黄色";
+      if (h >= 90 && h < 150) return "绿色";
+      if (h >= 150 && h < 210) return "青色";
+      if (h >= 210 && h < 270) return "蓝色";
+      if (h >= 270 && h < 330) return "紫色";
+      return "红色"; // 330-360
+    };
+
+    // Helper to update color preview
+    const updateColorPreview = (hue: number) => {
+      if (themeColorPreview) {
+        themeColorPreview.style.background = `oklch(0.6 0.15 ${hue})`;
+      }
+      if (themeColorSummary) {
+        themeColorSummary.textContent = getColorName(hue);
+      }
+    };
+
+    // Initialize theme color expander
+    if (themeColorExpander) {
+      initWinUIExpander("theme-color-expander");
+    }
+
+    // Initialize hue slider
+    if (hueSlider) {
+      const currentHue = getHue();
+      hueSlider.value = String(currentHue);
+      updateColorPreview(currentHue);
+
+      hueSlider.addEventListener("input", () => {
+        const hue = Number(hueSlider.value);
+        updateColorPreview(hue);
+      });
+
+      hueSlider.addEventListener("change", () => {
+        const newHue = Number(hueSlider.value);
+        setHue(newHue);
+      });
+    }
+
+    // Initialize reset hue button
+    if (resetHueBtn && hueSlider) {
+      resetHueBtn.addEventListener("click", () => {
+        const defaultHue = getDefaultHue();
+        hueSlider.value = String(defaultHue);
+        updateColorPreview(defaultHue);
+        setHue(defaultHue);
+      });
+    }
+
+    // Font display text mappings
+    const fontDisplayTexts: Record<string, string> = {
+      system:
+        document
+          .querySelector(
+            '#page-font-combobox .winui-combobox-item[data-value="system"]'
+          )
+          ?.textContent?.trim() || "System Default",
+      misans:
+        document
+          .querySelector(
+            '#page-font-combobox .winui-combobox-item[data-value="misans"]'
+          )
+          ?.textContent?.trim() || "MiSans",
+      harmonyos:
+        document
+          .querySelector(
+            '#page-font-combobox .winui-combobox-item[data-value="harmonyos"]'
+          )
+          ?.textContent?.trim() || "HarmonyOS Sans",
+    };
+
+    // Initialize Page Font ComboBox
+    initWinUIComboBox(
+      "page-font-combobox",
+      getPageFont(),
+      (value) => setPageFont(value as FontOption),
+      (value) => fontDisplayTexts[value] || value
+    );
+
+    // Material level display text mappings
+    const materialDisplayTexts: Record<string, string> = {
+      normal:
+        document
+          .querySelector(
+            '#material-level-combobox .winui-combobox-item[data-value="normal"] .winui-combobox-item-text'
+          )
+          ?.textContent?.trim() || "Basic",
+      full:
+        document
+          .querySelector(
+            '#material-level-combobox .winui-combobox-item[data-value="full"] .winui-combobox-item-text'
+          )
+          ?.textContent?.trim() || "Full",
+    };
+
+    // Update material level combobox disabled state
+    const updateMaterialComboboxState = (enabled: boolean) => {
+      if (materialLevelCombobox) {
+        if (enabled) {
+          materialLevelCombobox.classList.remove("disabled");
+        } else {
+          materialLevelCombobox.classList.add("disabled");
+        }
+      }
+    };
+
+    // Initialize Material Level ComboBox
+    initWinUIComboBox(
+      "material-level-combobox",
+      getMaterialLevel(),
+      (value) => setMaterialLevel(value as MaterialLevel),
+      (value) => materialDisplayTexts[value] || value
+    );
+
+    // Initialize advanced materials toggle
+    if (advancedMaterialsToggle) {
+      const isEnabled = getAdvancedMaterials();
+      updateMaterialComboboxState(isEnabled);
+
+      initWinUIToggle("toggle-advanced-materials", isEnabled, (enabled) => {
+        setAdvancedMaterials(enabled);
+        updateMaterialComboboxState(enabled);
+      });
+    }
+
+    // Initialize analytics toggle
+    if (analyticsToggle) {
+      initWinUIToggle("toggle-analytics", getAnalyticsEnabled(), (enabled) => {
+        setAnalyticsEnabled(enabled);
+
+        // Show reload hint
+        if (analyticsReloadHint) {
+          analyticsReloadHint.classList.remove("hidden");
+          const enableText =
+            analyticsReloadHint.querySelector("[data-enable-text]");
+          const disableText = analyticsReloadHint.querySelector(
+            "[data-disable-text]"
+          );
+          if (enableText && disableText) {
+            if (enabled) {
+              enableText.classList.remove("hidden");
+              disableText.classList.add("hidden");
+            } else {
+              enableText.classList.add("hidden");
+              disableText.classList.remove("hidden");
+            }
+          }
+        }
+      });
+    }
+  }
+
+  // Run on initial page load
+  initSettingsPage();
+
+  // Handle Swup page transitions
+  const setupSettingsSwupHook = () => {
+    window.swup.hooks.on("content:replace", () => {
+      resetWinUIComponents();
+      initSettingsPage();
+    });
+  };
+
+  if (window.swup) {
+    setupSettingsSwupHook();
+  } else {
+    document.addEventListener("swup:enable", setupSettingsSwupHook);
   }
 </script>

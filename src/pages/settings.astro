@@ -1,0 +1,678 @@
+---
+import { Icon } from "astro-icon/components";
+import I18nKey from "../i18n/i18nKey";
+import { i18n } from "../i18n/translation";
+import MainGridLayout from "../layouts/MainGridLayout.astro";
+---
+
+<MainGridLayout title={i18n(I18nKey.settings)} description={i18n(I18nKey.settings)}>
+  <div class="flex w-full rounded-[var(--radius-large)] relative">
+    <div class="card-base z-10 px-6 md:px-9 py-6 relative w-full">
+      <h1 class="text-2xl font-bold mb-6 text-90">{i18n(I18nKey.settings)}</h1>
+
+      <!-- Personalization Section -->
+      <section class="mb-8">
+        <h2 class="text-lg font-semibold mb-4 text-75 flex items-center gap-2">
+          <Icon name="material-symbols:palette-outline" class="text-xl" />
+          {i18n(I18nKey.settingsPersonalization)}
+        </h2>
+        <div class="space-y-2">
+          <!-- Theme Color Picker Expander -->
+          <div class="winui-expander" id="theme-color-expander">
+            <button type="button" class="winui-expander-header" aria-expanded="false">
+              <div class="winui-expander-header-content">
+                <Icon name="material-symbols:palette-outline" class="winui-expander-icon" />
+                <div class="winui-card-info">
+                  <div class="winui-card-title">{i18n(I18nKey.themeColor)}</div>
+                  <div class="winui-card-desc" id="theme-color-summary">250</div>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <div id="theme-color-preview" class="winui-color-preview"></div>
+                <svg class="winui-expander-chevron" viewBox="0 0 12 12" fill="none">
+                  <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+            </button>
+            <div class="winui-expander-content">
+              <div class="winui-expander-inner">
+                <div class="winui-setting-row winui-setting-row-slider">
+                  <div class="hue-slider-track w-full h-8 rounded-lg overflow-hidden">
+                    <input
+                      type="range"
+                      id="hue-slider"
+                      min="0"
+                      max="360"
+                      step="5"
+                      value="250"
+                      class="hue-slider w-full h-full cursor-pointer"
+                    />
+                  </div>
+                  <button id="reset-hue-btn" class="winui-icon-btn" title="Reset to default">
+                    <Icon name="material-symbols:refresh" class="text-lg" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Font Settings -->
+          <div class="winui-card">
+            <div class="winui-card-content">
+              <Icon name="material-symbols:font-download-outline" class="winui-card-icon" />
+              <div class="winui-card-info">
+                <div class="winui-card-title">{i18n(I18nKey.settingsFontSettings)}</div>
+              </div>
+              <div class="winui-combobox" id="page-font-combobox" data-value="system">
+                <button type="button" class="winui-combobox-trigger" aria-haspopup="listbox" aria-expanded="false">
+                  <span class="winui-combobox-value">{i18n(I18nKey.settingsFontSystem)}</span>
+                  <svg class="winui-combobox-chevron" viewBox="0 0 12 12" fill="none">
+                    <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+                <div class="winui-combobox-popup" role="listbox">
+                  <div class="winui-combobox-item" data-value="system" role="option">{i18n(I18nKey.settingsFontSystem)}</div>
+                  <div class="winui-combobox-item" data-value="misans" role="option">{i18n(I18nKey.settingsFontMiSans)}</div>
+                  <div class="winui-combobox-item" data-value="harmonyos" role="option">{i18n(I18nKey.settingsFontHarmonyOS)}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Performance Section -->
+      <section class="mb-8">
+        <h2 class="text-lg font-semibold mb-4 text-75 flex items-center gap-2">
+          <Icon name="material-symbols:speed-rounded" class="text-xl" />
+          {i18n(I18nKey.settingsPerformance)}
+        </h2>
+        <div class="space-y-2">
+          <!-- Low Performance Warning -->
+          <div id="low-perf-warning" class="hidden text-sm text-amber-600 dark:text-amber-400 px-4 py-3 rounded-lg bg-amber-500/10 flex items-start gap-2">
+            <Icon name="material-symbols:warning-outline" class="text-lg flex-shrink-0 mt-0.5" />
+            <span>{i18n(I18nKey.settingsLowPerfWarning)}</span>
+          </div>
+          <!-- Advanced Materials - Toggle + ComboBox Combo -->
+          <div class="winui-card" id="advanced-materials-card">
+            <div class="winui-card-content">
+              <Icon name="material-symbols:blur-on" class="winui-card-icon" />
+              <div class="winui-card-info">
+                <div class="winui-card-title">{i18n(I18nKey.settingsAdvancedMaterials)}</div>
+                <div class="winui-card-desc">{i18n(I18nKey.settingsAdvancedMaterialsDesc)}</div>
+              </div>
+              <div class="winui-toggle-combo">
+                <!-- Material Level ComboBox -->
+                <div class="winui-combobox winui-combobox-inline" id="material-level-combobox" data-value="normal">
+                  <button type="button" class="winui-combobox-trigger" aria-haspopup="listbox" aria-expanded="false">
+                    <span class="winui-combobox-value">{i18n(I18nKey.settingsMaterialBasic)}</span>
+                    <svg class="winui-combobox-chevron" viewBox="0 0 12 12" fill="none">
+                      <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </button>
+                  <div class="winui-combobox-popup" role="listbox">
+                    <div class="winui-combobox-item" data-value="normal" role="option">
+                      <span class="winui-combobox-item-text">{i18n(I18nKey.settingsMaterialBasic)}</span>
+                      <span class="winui-combobox-item-desc">{i18n(I18nKey.settingsMaterialBasicDesc)}</span>
+                    </div>
+                    <div class="winui-combobox-item" data-value="full" role="option">
+                      <span class="winui-combobox-item-text">{i18n(I18nKey.settingsMaterialFull)}</span>
+                      <span class="winui-combobox-item-desc">{i18n(I18nKey.settingsMaterialFullDesc)}</span>
+                    </div>
+                  </div>
+                </div>
+                <!-- Toggle Switch -->
+                <button type="button" id="toggle-advanced-materials" class="winui-toggle" role="switch" aria-checked="true">
+                  <span class="winui-toggle-track">
+                    <span class="winui-toggle-thumb"></span>
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Privacy Section -->
+      <section class="mb-8">
+        <h2 class="text-lg font-semibold mb-4 text-75 flex items-center gap-2">
+          <Icon name="material-symbols:shield-outline" class="text-xl" />
+          {i18n(I18nKey.settingsPrivacy)}
+        </h2>
+        <div class="space-y-2">
+          <!-- Analytics Toggle -->
+          <div class="winui-card">
+            <div class="winui-card-content">
+              <Icon name="material-symbols:analytics-outline" class="winui-card-icon" />
+              <div class="winui-card-info">
+                <div class="winui-card-title">{i18n(I18nKey.settingsAnalytics)}</div>
+                <div class="winui-card-desc">{i18n(I18nKey.settingsAnalyticsDesc)}</div>
+              </div>
+              <button type="button" id="toggle-analytics" class="winui-toggle" role="switch" aria-checked="true">
+                <span class="winui-toggle-track">
+                  <span class="winui-toggle-thumb"></span>
+                </span>
+              </button>
+            </div>
+          </div>
+          <!-- Reload hint for analytics -->
+          <div id="analytics-reload-hint" class="hidden text-sm text-amber-600 dark:text-amber-400 px-4 py-2 rounded-lg bg-amber-500/10">
+            <Icon name="material-symbols:info-outline" class="inline-block mr-1 -mt-0.5" />
+            <span data-enable-text>启用分析将在下次页面加载时生效。</span>
+            <span data-disable-text class="hidden">禁用分析将在下次页面加载时生效。</span>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</MainGridLayout>
+
+<style>
+  /* =====================================================
+     WinUI3 Base Card
+     ===================================================== */
+  .winui-card {
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 8px;
+    padding: 16px 16px;
+    transition: background 0.1s ease;
+  }
+  :root.dark .winui-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+  .winui-card:hover {
+    background: rgba(255, 255, 255, 0.8);
+  }
+  :root.dark .winui-card:hover {
+    background: rgba(255, 255, 255, 0.07);
+  }
+
+  .winui-card-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .winui-card-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .winui-card-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.9);
+  }
+  :root.dark .winui-card-title {
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .winui-card-desc {
+    font-size: 12px;
+    color: rgba(0, 0, 0, 0.5);
+    margin-top: 2px;
+  }
+  :root.dark .winui-card-desc {
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .winui-card-icon,
+  .winui-expander-icon {
+    font-size: 20px;
+    color: rgba(0, 0, 0, 0.7);
+    flex-shrink: 0;
+  }
+  :root.dark .winui-card-icon,
+  :root.dark .winui-expander-icon {
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  .winui-color-preview {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: oklch(0.6 0.15 var(--hue, 250));
+    border: 2px solid rgba(0, 0, 0, 0.1);
+    flex-shrink: 0;
+  }
+  :root.dark .winui-color-preview {
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .winui-setting-row-slider {
+    flex-direction: row;
+    gap: 12px;
+  }
+
+  .winui-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.1s ease;
+  }
+  :root.dark .winui-icon-btn {
+    color: rgba(255, 255, 255, 0.5);
+  }
+  .winui-icon-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: rgba(0, 0, 0, 0.75);
+  }
+  :root.dark .winui-icon-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.75);
+  }
+
+  /* =====================================================
+     WinUI3 Expander
+     ===================================================== */
+  .winui-expander {
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: background 0.1s ease;
+  }
+  :root.dark .winui-expander {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .winui-expander-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    transition: background 0.1s ease;
+  }
+  .winui-expander-header:hover {
+    background: rgba(0, 0, 0, 0.03);
+  }
+  :root.dark .winui-expander-header:hover {
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .winui-expander-header-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-align: left;
+  }
+
+  .winui-expander-chevron {
+    width: 12px;
+    height: 12px;
+    color: rgba(0, 0, 0, 0.5);
+    transition: transform 0.25s cubic-bezier(0.1, 0.9, 0.2, 1);
+    flex-shrink: 0;
+  }
+  :root.dark .winui-expander-chevron {
+    color: rgba(255, 255, 255, 0.5);
+  }
+  .winui-expander.open .winui-expander-chevron {
+    transform: rotate(180deg);
+  }
+
+  .winui-expander-content {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.25s cubic-bezier(0.1, 0.9, 0.2, 1);
+  }
+  .winui-expander.open .winui-expander-content {
+    grid-template-rows: 1fr;
+  }
+
+  .winui-expander-inner {
+    overflow: hidden;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+  }
+  :root.dark .winui-expander-inner {
+    border-top-color: rgba(255, 255, 255, 0.06);
+  }
+
+  .winui-setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    gap: 16px;
+  }
+  .winui-setting-row:not(:last-child) {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+  }
+  :root.dark .winui-setting-row:not(:last-child) {
+    border-bottom-color: rgba(255, 255, 255, 0.04);
+  }
+
+  .winui-setting-label {
+    font-size: 14px;
+    color: rgba(0, 0, 0, 0.75);
+  }
+  :root.dark .winui-setting-label {
+    color: rgba(255, 255, 255, 0.75);
+  }
+
+  /* =====================================================
+     WinUI3 ComboBox
+     ===================================================== */
+  .winui-combobox {
+    position: relative;
+    min-width: 140px;
+  }
+
+  .winui-combobox-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    height: 32px;
+    padding: 0 12px;
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-bottom-width: 2px;
+    border-bottom-color: rgba(0, 0, 0, 0.6);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.1s ease;
+    font-size: 14px;
+    color: rgba(0, 0, 0, 0.9);
+  }
+  :root.dark .winui-combobox-trigger {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.1);
+    border-bottom-color: rgba(255, 255, 255, 0.6);
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .winui-combobox-trigger:hover {
+    background: rgba(255, 255, 255, 0.9);
+  }
+  :root.dark .winui-combobox-trigger:hover {
+    background: rgba(255, 255, 255, 0.09);
+  }
+
+  .winui-combobox.open .winui-combobox-trigger {
+    border-bottom-color: var(--primary);
+  }
+
+  .winui-combobox-trigger:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 1px;
+  }
+
+  .winui-combobox-value {
+    flex: 1;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .winui-combobox-chevron {
+    width: 12px;
+    height: 12px;
+    margin-left: 8px;
+    color: rgba(0, 0, 0, 0.5);
+    flex-shrink: 0;
+    transition: transform 0.15s ease;
+  }
+  :root.dark .winui-combobox-chevron {
+    color: rgba(255, 255, 255, 0.5);
+  }
+  .winui-combobox.open .winui-combobox-chevron {
+    transform: rotate(180deg);
+  }
+
+  /* ComboBox Popup */
+  .winui-combobox-popup {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    min-width: 100%;
+    background: rgba(252, 252, 252, 0.98);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 8px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.14), 0 0 0 1px rgba(0, 0, 0, 0.05);
+    z-index: 9999;
+    padding: 4px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-4px);
+    transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
+  }
+  :root.dark .winui-combobox-popup {
+    background: rgba(44, 44, 44, 0.98);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  }
+
+  @supports (backdrop-filter: blur(20px)) {
+    .winui-combobox-popup {
+      background: rgba(252, 252, 252, 0.85);
+      backdrop-filter: blur(20px) saturate(150%);
+    }
+    :root.dark .winui-combobox-popup {
+      background: rgba(44, 44, 44, 0.82);
+    }
+  }
+
+  .winui-combobox.open .winui-combobox-popup,
+  .winui-combobox-popup.open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+
+  /* ComboBox Item */
+  .winui-combobox-item {
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.05s ease;
+    font-size: 14px;
+    color: rgba(0, 0, 0, 0.9);
+  }
+  :root.dark .winui-combobox-item {
+    color: rgba(255, 255, 255, 0.9);
+  }
+  .winui-combobox-item:hover {
+    background: rgba(0, 0, 0, 0.05);
+  }
+  :root.dark .winui-combobox-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .winui-combobox-item.selected {
+    background: rgba(var(--primary-rgb), 0.1);
+  }
+  .winui-combobox-item.selected:hover {
+    background: rgba(var(--primary-rgb), 0.15);
+  }
+
+  .winui-combobox-item-text {
+    font-size: 14px;
+  }
+  .winui-combobox-item-desc {
+    font-size: 11px;
+    color: rgba(0, 0, 0, 0.5);
+    margin-top: 2px;
+  }
+  :root.dark .winui-combobox-item-desc {
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  /* Inline ComboBox (for toggle combo) */
+  .winui-combobox-inline {
+    min-width: 120px;
+  }
+  .winui-combobox-inline .winui-combobox-popup {
+    min-width: 200px;
+    right: 0;
+    left: auto;
+  }
+
+  /* Toggle + ComboBox combo */
+  .winui-toggle-combo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  /* Disabled state for combobox */
+  .winui-combobox.disabled .winui-combobox-trigger {
+    opacity: 0.4;
+    pointer-events: none;
+  }
+
+  /* =====================================================
+     WinUI3 ToggleSwitch
+     ===================================================== */
+  .winui-toggle {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 0;
+    border: none;
+    background: transparent;
+    outline: none;
+    flex-shrink: 0;
+  }
+
+  .winui-toggle-track {
+    position: relative;
+    width: 40px;
+    height: 20px;
+    background: transparent;
+    border-radius: 10px;
+    border: 2px solid rgba(0, 0, 0, 0.55);
+    transition: all 0.15s cubic-bezier(0.1, 0.9, 0.2, 1);
+    box-sizing: border-box;
+  }
+  :root.dark .winui-toggle-track {
+    border-color: rgba(255, 255, 255, 0.55);
+  }
+
+  .winui-toggle-thumb {
+    position: absolute;
+    top: 50%;
+    left: 3px;
+    width: 12px;
+    height: 12px;
+    background: rgba(0, 0, 0, 0.55);
+    border-radius: 50%;
+    transform: translateY(-50%);
+    transition: all 0.15s cubic-bezier(0.1, 0.9, 0.2, 1);
+  }
+  :root.dark .winui-toggle-thumb {
+    background: rgba(255, 255, 255, 0.55);
+  }
+
+  /* Hover - unchecked */
+  .winui-toggle:hover .winui-toggle-track {
+    border-color: rgba(0, 0, 0, 0.7);
+  }
+  :root.dark .winui-toggle:hover .winui-toggle-track {
+    border-color: rgba(255, 255, 255, 0.7);
+  }
+  .winui-toggle:hover .winui-toggle-thumb {
+    background: rgba(0, 0, 0, 0.7);
+  }
+  :root.dark .winui-toggle:hover .winui-toggle-thumb {
+    background: rgba(255, 255, 255, 0.7);
+  }
+
+  /* Active/pressed */
+  .winui-toggle:active .winui-toggle-thumb {
+    width: 14px;
+  }
+
+  /* Checked state */
+  .winui-toggle[aria-checked="true"] .winui-toggle-track {
+    background: var(--primary);
+    border-color: var(--primary);
+  }
+  :root.dark .winui-toggle[aria-checked="true"] .winui-toggle-track {
+    background: var(--primary);
+    border-color: var(--primary);
+  }
+
+  .winui-toggle[aria-checked="true"] .winui-toggle-thumb {
+    left: calc(100% - 15px);
+    background: white;
+  }
+  :root.dark .winui-toggle[aria-checked="true"] .winui-toggle-thumb {
+    background: white;
+  }
+
+  .winui-toggle[aria-checked="true"]:hover .winui-toggle-track {
+    background: oklch(from var(--primary) calc(l * 0.92) c h);
+    border-color: oklch(from var(--primary) calc(l * 0.92) c h);
+  }
+  .winui-toggle[aria-checked="true"]:active .winui-toggle-thumb {
+    left: calc(100% - 17px);
+  }
+
+  /* Focus */
+  .winui-toggle:focus-visible .winui-toggle-track {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+
+  /* =====================================================
+     Hue Slider (unchanged)
+     ===================================================== */
+  .hue-slider-track {
+    background: linear-gradient(to right,
+      oklch(0.7 0.15 0),
+      oklch(0.7 0.15 60),
+      oklch(0.7 0.15 120),
+      oklch(0.7 0.15 180),
+      oklch(0.7 0.15 240),
+      oklch(0.7 0.15 300),
+      oklch(0.7 0.15 360)
+    );
+  }
+
+  .hue-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+  }
+
+  .hue-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 8px;
+    height: 32px;
+    background: white;
+    border-radius: 4px;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  .hue-slider::-moz-range-thumb {
+    width: 8px;
+    height: 32px;
+    background: white;
+    border-radius: 4px;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+</style>

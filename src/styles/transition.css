@@ -82,3 +82,27 @@ html {
 #post-container :nth-child(6) {
   animation-delay: calc(var(--content-delay) + 325ms);
 }
+
+:root.material-normal {
+  scroll-behavior: auto;
+}
+
+:root.material-normal .onload-animation {
+  opacity: 1;
+  animation: none;
+}
+
+:root.material-normal #post-container > * {
+  animation: none;
+  opacity: 1;
+}
+
+:root.cold-start-complete .onload-animation {
+  opacity: 1;
+  animation: none;
+}
+
+:root.cold-start-complete #post-container > * {
+  animation: none;
+  opacity: 1;
+}

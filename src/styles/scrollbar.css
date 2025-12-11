@@ -1,11 +1,13 @@
 .scrollbar-base.os-scrollbar {
-  @apply transition-all;
+  /* Performance: Use specific transition properties instead of 'all' */
+  transition: opacity 0.2s ease;
   pointer-events: unset;
 
   &.os-scrollbar-horizontal {
     @apply py-1 px-2 h-4;
     .os-scrollbar-track .os-scrollbar-handle {
       @apply rounded-full h-1;
+      transition: height 0.15s ease, background-color 0.15s ease;
     }
     &:hover .os-scrollbar-track .os-scrollbar-handle {
       @apply h-2;
@@ -16,6 +18,7 @@
     @apply px-1 py-1 w-4;
     .os-scrollbar-track .os-scrollbar-handle {
       @apply rounded-full w-1;
+      transition: width 0.15s ease, background-color 0.15s ease;
     }
     &:hover .os-scrollbar-track .os-scrollbar-handle {
       @apply w-2;

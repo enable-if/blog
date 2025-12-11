@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run build:*)",
+      "Bash(cat:*)",
+      "WebSearch",
+      "WebFetch(domain:web-components.fluentui.dev)",
+      "Bash(npm install:*)",
+      "Bash(pnpm add:*)",
+      "Bash(yarn add:*)",
+      "Bash(npx astro check:*)"
+    ]
+  },
+  "outputStyle": "default"
+}

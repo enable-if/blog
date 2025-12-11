@@ -107,14 +107,34 @@
   width: 300%;
   opacity: 0.18;
   pointer-events: none;
+  contain: layout style;
 }
 
 :root.dark .fluent-bg {
   opacity: 0.14;
 }
 
-.fluent-bg .blue-gradient {
+/* Reduce Motion Mode - hide animated background */
+:root.reduce-motion .fluent-bg {
+  display: none;
+}
+
+/* Material Normal Mode - static background without animations */
+:root.material-normal .fluent-bg {
+  animation: none !important;
+}
+
+:root.material-normal .fluent-bg > div {
+  animation: none !important;
+  will-change: auto;
+}
+
+/* Gradient children - minimal GPU overhead */
+.fluent-bg > div {
   position: inherit;
+}
+
+.fluent-bg .blue-gradient {
   background-image: var(--fluent-primary-grad);
   bottom: 10%;
   left: 0;
@@ -123,7 +143,6 @@
 }
 
 .fluent-bg .blue-gradient-bottom {
-  position: inherit;
   background-image: var(--fluent-primary-grad);
   bottom: 0;
   left: 0;
@@ -132,7 +151,6 @@
 }
 
 .fluent-bg .green-gradient {
-  position: inherit;
   background-image: var(--fluent-secondary-grad);
   bottom: 44%;
   left: 17%;
@@ -141,7 +159,6 @@
 }
 
 .fluent-bg .yellow-gradient {
-  position: inherit;
   background-image: var(--fluent-tertiary-grad);
   bottom: 33.2%;
   left: 36.88%;
@@ -150,7 +167,6 @@
 }
 
 .fluent-bg .red-gradient {
-  position: inherit;
   background-image: var(--fluent-quaternary-grad);
   bottom: 45.27%;
   left: 37.78%;
@@ -159,7 +175,6 @@
 }
 
 .fluent-bg .purple-gradient {
-  position: inherit;
   background-image: var(--fluent-quinary-grad);
   bottom: 38.4%;
   left: 45.99%;
@@ -167,52 +182,61 @@
   top: 28.59%;
 }
 
-/* Animations */
+/* Animations - Use transform3d for GPU acceleration */
 .fluent-bg .green-gradient {
   animation: gga 40s infinite;
+  will-change: transform;
 }
 
 @keyframes gga {
   50%,
   100% {
-    transform: none;
+    transform: translate3d(0, 0, 0);
   }
   75% {
-    transform: translateY(36%);
+    transform: translate3d(0, 36%, 0);
   }
 }
 
 .fluent-bg .blue-gradient-bottom {
   animation: bgba 80s infinite;
+  will-change: transform;
 }
 
 @keyframes bgba {
   0%,
   50% {
-    transform: none;
+    transform: translate3d(0, 0, 0);
   }
   25% {
-    transform: translate(16%, -53%);
+    transform: translate3d(16%, -53%, 0);
   }
 }
 
 .fluent-bg .purple-gradient {
   animation: pga 120s infinite;
+  will-change: transform, opacity;
 }
 
 @keyframes pga {
   0%,
   100% {
     opacity: 1;
-    transform: none;
+    transform: translate3d(0, 0, 0);
   }
   25%,
   75% {
     opacity: 0.5;
-    transform: none;
+    transform: translate3d(0, 0, 0);
   }
   50% {
     opacity: 0.5;
-    transform: translate(-42%, 15%);
+    transform: translate3d(-42%, 15%, 0);
   }
+}
+
+.fluent-bg[data-paused="true"] .green-gradient,
+.fluent-bg[data-paused="true"] .blue-gradient-bottom,
+.fluent-bg[data-paused="true"] .purple-gradient {
+  animation-play-state: paused;
 }

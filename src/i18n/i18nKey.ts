@@ -3,6 +3,7 @@ enum I18nKey {
 	about = "about",
 	archive = "archive",
 	search = "search",
+	settings = "settings",
 
 	tags = "tags",
 	categories = "categories",
@@ -41,6 +42,27 @@ enum I18nKey {
 	contentValidityExpiredLabel = "contentValidityExpiredLabel",
 	contentValidityExpiredDescription = "contentValidityExpiredDescription",
 	initialLoading = "initialLoading",
+
+	// Settings page
+	settingsAdvancedMaterials = "settingsAdvancedMaterials",
+	settingsAdvancedMaterialsDesc = "settingsAdvancedMaterialsDesc",
+	settingsAnalytics = "settingsAnalytics",
+	settingsAnalyticsDesc = "settingsAnalyticsDesc",
+	settingsPerformance = "settingsPerformance",
+	settingsPrivacy = "settingsPrivacy",
+	settingsPersonalization = "settingsPersonalization",
+	settingsFontSettings = "settingsFontSettings",
+	settingsFontSystem = "settingsFontSystem",
+	settingsFontMiSans = "settingsFontMiSans",
+	settingsFontHarmonyOS = "settingsFontHarmonyOS",
+	settingsMaterialLevel = "settingsMaterialLevel",
+	settingsMaterialOpaque = "settingsMaterialOpaque",
+	settingsMaterialBasic = "settingsMaterialBasic",
+	settingsMaterialFull = "settingsMaterialFull",
+	settingsMaterialOpaqueDesc = "settingsMaterialOpaqueDesc",
+	settingsMaterialBasicDesc = "settingsMaterialBasicDesc",
+	settingsMaterialFullDesc = "settingsMaterialFullDesc",
+	settingsLowPerfWarning = "settingsLowPerfWarning",
 }
 
 export default I18nKey;

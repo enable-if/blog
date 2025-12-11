@@ -6,6 +6,7 @@ export const en: Translation = {
 	[Key.about]: "About",
 	[Key.archive]: "Archive",
 	[Key.search]: "Search",
+	[Key.settings]: "Settings",
 
 	[Key.tags]: "Tags",
 	[Key.categories]: "Categories",
@@ -47,4 +48,27 @@ export const en: Translation = {
 	[Key.contentValidityExpiredDescription]:
 		"Published over {{cautionMonths}} months ago; information could be outdated.",
 	[Key.initialLoading]: "Loading the page, this may take a few seconds.",
+
+	// Settings page
+	[Key.settingsAdvancedMaterials]: "Advanced Materials",
+	[Key.settingsAdvancedMaterialsDesc]:
+		"Enable acrylic blur, animated backgrounds and other visual effects. Disable for better performance.",
+	[Key.settingsAnalytics]: "Usage Analytics",
+	[Key.settingsAnalyticsDesc]:
+		"Allow Microsoft Clarity to collect anonymous usage data to improve site experience.",
+	[Key.settingsPerformance]: "Performance",
+	[Key.settingsPrivacy]: "Privacy",
+	[Key.settingsPersonalization]: "Personalization",
+	[Key.settingsFontSettings]: "Font Settings",
+	[Key.settingsFontSystem]: "System Default",
+	[Key.settingsFontMiSans]: "MiSans",
+	[Key.settingsFontHarmonyOS]: "HarmonyOS Sans",
+	[Key.settingsMaterialLevel]: "Material Level",
+	[Key.settingsMaterialOpaque]: "Opaque",
+	[Key.settingsMaterialBasic]: "Basic",
+	[Key.settingsMaterialFull]: "Full",
+	[Key.settingsMaterialOpaqueDesc]: "Solid backgrounds, best performance",
+	[Key.settingsMaterialBasicDesc]: "Semi-transparent, no blur effect",
+	[Key.settingsMaterialFullDesc]: "Acrylic effect, dynamic background",
+	[Key.settingsLowPerfWarning]: "Your device may have limited performance. Enabling advanced materials could affect browsing experience.",
 };

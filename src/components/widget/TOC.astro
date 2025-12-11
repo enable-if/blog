@@ -80,7 +80,7 @@ const maxLevel = siteConfig.toc.depth;
         style="opacity: 0"
         class:list={[
           { hidden: headings.length == 0 },
-          "-z-10 absolute left-0 right-0 rounded-xl transition-all",
+          "-z-10 absolute left-0 right-0 rounded-xl top-0",
         ]}
       />
     </table-of-contents>
@@ -110,6 +110,8 @@ const maxLevel = siteConfig.toc.depth;
     backdrop-filter: blur(12px) saturate(150%);
     background-color: rgba(255, 255, 255, 0.35);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    /* Performance: Specific transition without will-change to reduce GPU memory */
+    transition: transform 0.15s ease-out, height 0.15s ease-out, opacity 0.15s ease-out;
   }
   :root.dark #active-indicator {
     background-color: rgba(255, 255, 255, 0.08);
@@ -149,11 +151,15 @@ const maxLevel = siteConfig.toc.depth;
     lastIndicatorHeight: number | null = null;
     lastScrollTargetTop: number | null = null;
     updateScheduled = false;
+    scrollThrottleTimer: number | null = null;
+    resizeObserver: ResizeObserver | null = null;
 
     constructor() {
       super();
+      // Use rootMargin to trigger earlier for better UX
       this.observer = new IntersectionObserver(this.markVisibleSection, {
         threshold: 0,
+        rootMargin: '-10% 0px -70% 0px',
       });
     }
 
@@ -178,84 +184,101 @@ const maxLevel = siteConfig.toc.depth;
       let i = this.active.length - 1;
       let min = this.active.length - 1,
         max = -1;
-      while (i >= 0 && !this.active[i]) {
-        this.tocEntries[i].classList.remove(this.visibleClass);
-        i--;
+
+      // Performance: Batch all classList changes to avoid forced reflow
+      // First pass: calculate min/max without touching DOM
+      let tempI = i;
+      while (tempI >= 0 && !this.active[tempI]) tempI--;
+      while (tempI >= 0 && this.active[tempI]) {
+        min = Math.min(min, tempI);
+        max = Math.max(max, tempI);
+        tempI--;
       }
-      while (i >= 0 && this.active[i]) {
-        this.tocEntries[i].classList.add(this.visibleClass);
-        min = Math.min(min, i);
-        max = Math.max(max, i);
-        i--;
-      }
-      while (i >= 0) {
-        this.tocEntries[i].classList.remove(this.visibleClass);
-        i--;
-      }
-      if (min > max) {
-        this.activeIndicator?.setAttribute("style", `opacity: 0`);
-      } else {
-        // Cache rects to avoid repeated layout reads
-        const parentRectTop = this.tocEl?.getBoundingClientRect().top || 0;
-        const scrollOffset = this.tocEl?.scrollTop || 0;
-        const minRect = this.tocEntries[min].getBoundingClientRect();
-        const maxRect = this.tocEntries[max].getBoundingClientRect();
-        const top = minRect.top - parentRectTop + scrollOffset;
-        const bottom = maxRect.bottom - parentRectTop + scrollOffset;
-        const height = bottom - top;
-        // Only update style when delta is large enough to be visible (avoid layout work churn)
-        if (
-          this.lastIndicatorTop === null ||
-          Math.abs(top - this.lastIndicatorTop) > 1 ||
-          this.lastIndicatorHeight === null ||
-          Math.abs(height - this.lastIndicatorHeight) > 1
-        ) {
-          this.activeIndicator?.setAttribute(
-            "style",
-            `top: ${top}px; height: ${height}px`
-          );
-          this.lastIndicatorTop = top;
-          this.lastIndicatorHeight = height;
+
+      // Use DocumentFragment or batch DOM operations
+      requestAnimationFrame(() => {
+        // Second pass: apply all class changes at once
+        for (let j = 0; j < this.tocEntries.length; j++) {
+          const shouldBeVisible = j >= min && j <= max && min <= max;
+          const isVisible = this.tocEntries[j].classList.contains(this.visibleClass);
+          if (shouldBeVisible !== isVisible) {
+            this.tocEntries[j].classList.toggle(this.visibleClass, shouldBeVisible);
+          }
         }
-      }
+
+        if (min > max) {
+          this.activeIndicator?.setAttribute("style", `opacity: 0`);
+        } else {
+          // Cache rects to avoid repeated layout reads
+          const parentRectTop = this.tocEl?.getBoundingClientRect().top || 0;
+          const scrollOffset = this.tocEl?.scrollTop || 0;
+          const minRect = this.tocEntries[min].getBoundingClientRect();
+          const maxRect = this.tocEntries[max].getBoundingClientRect();
+          const top = minRect.top - parentRectTop + scrollOffset;
+          const bottom = maxRect.bottom - parentRectTop + scrollOffset;
+          const height = bottom - top;
+          // Only update style when delta is large enough to be visible (avoid layout work churn)
+          if (
+            this.lastIndicatorTop === null ||
+            Math.abs(top - this.lastIndicatorTop) > 1 ||
+            this.lastIndicatorHeight === null ||
+            Math.abs(height - this.lastIndicatorHeight) > 1
+          ) {
+            // Performance: Use transform instead of top for GPU acceleration
+            this.activeIndicator?.setAttribute(
+              "style",
+              `transform: translateY(${top}px); height: ${height}px; opacity: 1; will-change: transform, height;`
+            );
+            this.lastIndicatorTop = top;
+            this.lastIndicatorHeight = height;
+          }
+        }
+      });
     };
 
     scrollToActiveHeading = () => {
-      // If the TOC widget can accommodate both the topmost
-      // and bottommost items, scroll to the topmost item.
-      // Otherwise, scroll to the bottommost one.
+      // Throttle scroll updates for better performance
+      if (this.scrollThrottleTimer) return;
 
-      if (this.anchorNavTarget || !this.tocEl) return;
-      const activeHeading = document.querySelectorAll<HTMLDivElement>(
-        `#toc .${this.visibleClass}`
-      );
-      if (!activeHeading.length) return;
+      this.scrollThrottleTimer = window.setTimeout(() => {
+        this.scrollThrottleTimer = null;
 
-      const topmost = activeHeading[0];
-      const bottommost = activeHeading[activeHeading.length - 1];
-      const tocHeight = this.tocEl.clientHeight;
+        // If the TOC widget can accommodate both the topmost
+        // and bottommost items, scroll to the topmost item.
+        // Otherwise, scroll to the bottommost one.
 
-      let top;
-      if (
-        bottommost.getBoundingClientRect().bottom -
-          topmost.getBoundingClientRect().top <
-        0.9 * tocHeight
-      )
-        top = topmost.offsetTop - 32;
-      else top = bottommost.offsetTop - tocHeight * 0.8;
+        if (this.anchorNavTarget || !this.tocEl) return;
+        const activeHeading = document.querySelectorAll<HTMLDivElement>(
+          `#toc .${this.visibleClass}`
+        );
+        if (!activeHeading.length) return;
 
-      // Skip if target didn't change significantly
-      if (
-        this.lastScrollTargetTop === null ||
-        Math.abs(top - this.lastScrollTargetTop) > 2
-      ) {
-        this.lastScrollTargetTop = top;
-        this.tocEl.scrollTo({
-          top,
-          left: 0,
-          behavior: "smooth",
-        });
-      }
+        const topmost = activeHeading[0];
+        const bottommost = activeHeading[activeHeading.length - 1];
+        const tocHeight = this.tocEl.clientHeight;
+
+        let top;
+        if (
+          bottommost.getBoundingClientRect().bottom -
+            topmost.getBoundingClientRect().top <
+          0.9 * tocHeight
+        )
+          top = topmost.offsetTop - 32;
+        else top = bottommost.offsetTop - tocHeight * 0.8;
+
+        // Skip if target didn't change significantly
+        if (
+          this.lastScrollTargetTop === null ||
+          Math.abs(top - this.lastScrollTargetTop) > 2
+        ) {
+          this.lastScrollTargetTop = top;
+          this.tocEl.scrollTo({
+            top,
+            left: 0,
+            behavior: "smooth",
+          });
+        }
+      }, 100);
     };
 
     // Coalesce multiple update requests into a single rAF
@@ -365,8 +388,15 @@ const maxLevel = siteConfig.toc.depth;
     }
 
     disconnectedCallback() {
+      // Clean up timers
+      if (this.scrollThrottleTimer) {
+        clearTimeout(this.scrollThrottleTimer);
+        this.scrollThrottleTimer = null;
+      }
+      // Clean up observers
       this.sections.forEach((section) => this.observer.unobserve(section));
       this.observer.disconnect();
+      this.resizeObserver?.disconnect();
       this.tocEl?.removeEventListener("click", this.handleAnchorClick);
     }
   }
