@@ -127,6 +127,7 @@
 :root.material-normal .fluent-bg > div {
   animation: none !important;
   will-change: auto;
+  transform: none;
 }
 
 /* Gradient children - minimal GPU overhead */

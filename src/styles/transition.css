@@ -7,15 +7,18 @@ html.is-animating .transition-swup-fade {
 }
 
 /* Enable smooth scrolling with optimized timing */
+/* Disabled by default for better scroll performance */
+/* Smooth scrolling is handled by JavaScript only when needed */
 html {
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
 }
 
 /* Use CSS custom properties for scroll timing control */
 @supports (scroll-behavior: smooth) {
   html {
-    /* Browser will use internal smooth scroll with good easing */
-    scroll-behavior: smooth;
+    /* Disabled: CSS smooth scroll can cause jank during normal scrolling */
+    /* scroll-behavior: smooth; */
+    scroll-behavior: auto;
   }
 }
 
@@ -83,9 +86,7 @@ html {
   animation-delay: calc(var(--content-delay) + 325ms);
 }
 
-:root.material-normal {
-  scroll-behavior: auto;
-}
+/* material-normal inherits auto scroll behavior from html */
 
 :root.material-normal .onload-animation {
   opacity: 1;

@@ -132,24 +132,15 @@ const moreLinks = links.slice(2);
 </div>
 
 <style>
-    .scrollbar-hide {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-    }
-    .scrollbar-hide::-webkit-scrollbar {
-        display: none;
-    }
     #more-links-dropdown {
         opacity: 0;
         visibility: hidden;
-        /* Use transform3d for GPU acceleration */
         transform: translate3d(0, -8px, 0);
         will-change: transform, opacity;
         transition:
             opacity 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
             visibility 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
             transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        /* Optimize performance */
         contain: layout style paint;
     }
     #more-links-dropdown.is-visible {
@@ -157,16 +148,10 @@ const moreLinks = links.slice(2);
         visibility: visible;
         transform: translate3d(0, 0, 0);
     }
-    /* Prevent layout shifts on navbar */
     #navbar {
         contain: layout;
     }
-    /* Optimize hover animations */
-    .more-link {
-        will-change: background-color;
-    }
 
-    /* Reduce motion support */
     @media (prefers-reduced-motion: reduce) {
         #more-links-dropdown {
             transition-duration: 0.01ms !important;

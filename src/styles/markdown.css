@@ -1,4 +1,7 @@
 .custom-md {
+  /* Performance: Isolate paint operations for smoother scrolling */
+  contain: layout style;
+
   h1 {
     @apply text-3xl;
   }

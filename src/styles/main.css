@@ -11,6 +11,8 @@
     background-color: rgba(255, 255, 255, 0.55);
     border: 1px solid rgba(0, 0, 0, 0.08);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 0 1px rgba(0, 0, 0, 0.04);
+    /* Performance: Contain layout and paint to prevent scroll jank */
+    contain: layout style paint;
   }
   :root.dark .card-base {
     background-color: rgba(32, 32, 32, 0.65);
@@ -169,10 +171,13 @@
     );
   }
 
-  .hide-scrollbar {
+  .hide-scrollbar,
+  .scrollbar-hide {
     -ms-overflow-style: none;
+    scrollbar-width: none;
   }
-  .hide-scrollbar::-webkit-scrollbar {
+  .hide-scrollbar::-webkit-scrollbar,
+  .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
 
