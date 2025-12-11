@@ -359,6 +359,7 @@ const links = Astro.props.links;
   }
 
   function setupNavMenu() {
+    // Always destroy the old controller first
     window.__navMenuController?.destroy();
 
     try {
@@ -375,7 +376,8 @@ const links = Astro.props.links;
       return;
     }
 
-    if (!window.__navMenuController || window.__navMenuSwupAttached) return;
+    // Only attach Swup hooks once globally
+    if (window.__navMenuSwupAttached) return;
     window.__navMenuSwupAttached = true;
 
     const attachSwupHooks = () => {
@@ -386,7 +388,16 @@ const links = Astro.props.links;
       });
 
       window.swup.hooks.on("content:replace", () => {
-        queueMicrotask(() => setupNavMenu());
+        // Re-initialize the controller after content is replaced
+        // Need to wait for new DOM elements to be ready
+        queueMicrotask(() => {
+          window.__navMenuController?.destroy();
+          try {
+            window.__navMenuController = new NavMenuController();
+          } catch (error) {
+            console.error("Failed to re-initialize nav menu:", error);
+          }
+        });
       });
     };
 
